@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Username Finder — Find a handle across the social web",
   description:
-    "Type any @username and instantly probe 30+ social platforms (Instagram, TikTok, X, Snapchat, GitHub, Telegram, etc.) to see where accounts with that name exist.",
+    "Type any @username and instantly probe 95+ social platforms (Instagram, TikTok, X, Snapchat, GitHub, Discord, Telegram, etc.) to see where accounts with that name exist.",
   keywords: [
     "username search",
     "osint",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Username Finder",
     description:
-      "Probe 30+ social platforms in parallel for any @username.",
+      "Probe 95+ social platforms in parallel for any @username.",
     siteName: "Username Finder",
     type: "website",
   },
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Username Finder",
     description:
-      "Probe 30+ social platforms in parallel for any @username.",
+      "Probe 95+ social platforms in parallel for any @username.",
   },
 };
 

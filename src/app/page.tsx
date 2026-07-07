@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { PLATFORMS } from "@/lib/platforms";
+import { BrandIcon, brandColor } from "@/components/brand-icon";
 
 type HitStatus = "found" | "not_found" | "unknown" | "blocked" | "error";
 
@@ -166,9 +167,10 @@ export default function Home() {
           </h1>
           <p className="mt-3 text-muted-foreground max-w-2xl text-sm sm:text-base">
             Type any handle and we&apos;ll probe {totalPlatforms}+ social
-            platforms — Instagram, TikTok, X, Snapchat, GitHub, Telegram and
-            many more — to see where accounts with that name exist, are missing,
-            or are blocked from automated checks.
+            platforms — Instagram, TikTok, X, Snapchat, GitHub, Discord,
+            Telegram, Mastodon, Spotify and many more — to see where accounts
+            with that name exist, are missing, or are blocked from automated
+            checks.
           </p>
 
           {/* Search bar — wrapped in <form> so password-manager extensions
@@ -430,15 +432,17 @@ function HitCard({ hit }: { hit: Hit }) {
         className={`relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5 ring-1 ${meta.ring}`}
       >
         <CardContent className="p-4 flex items-start gap-3">
-          {/* Platform icon */}
+          {/* Platform icon — real brand SVG logo on a tinted tile */}
           <div
-            className="h-10 w-10 rounded-md flex items-center justify-center text-lg shrink-0 border border-border/60"
+            className="h-10 w-10 rounded-md flex items-center justify-center shrink-0 border border-border/60"
             style={{
-              backgroundColor: platform ? `${platform.color}15` : undefined,
+              backgroundColor: platform
+                ? `${brandColor(platform.iconSlug) ?? platform.color}1A`
+                : undefined,
             }}
             aria-hidden
           >
-            {platform?.icon ?? "🌐"}
+            <BrandIcon slug={platform?.iconSlug ?? ""} size={20} colored />
           </div>
 
           {/* Main */}

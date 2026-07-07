@@ -11,8 +11,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { PLATFORMS } from "@/lib/platforms";
 import { BrandIcon, brandColor } from "@/components/brand-icon";
-
-type HitStatus = "found" | "not_found" | "unknown" | "blocked" | "error";
+import { ProfileDialog } from "./profile-dialog";
+import type { HitStatus } from "./hit-types";
 
 interface Hit {
   platformId: string;
@@ -79,6 +79,8 @@ export default function Home() {
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [elapsed, setElapsed] = useState<number | null>(null);
+  const [selectedHit, setSelectedHit] = useState<Hit | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
   const abortRef = useRef<AbortController | null>(null);
 
@@ -259,6 +261,10 @@ export default function Home() {
             filteredResults={filteredResults}
             elapsed={elapsed}
             loading={loading}
+            onSelectHit={(hit) => {
+              setSelectedHit(hit);
+              setDialogOpen(true);
+            }}
           />
         )}
       </main>
@@ -275,6 +281,19 @@ export default function Home() {
           </span>
         </div>
       </footer>
+
+      <ProfileDialog
+        hit={
+          selectedHit
+            ? {
+                ...selectedHit,
+                username: results?.username ?? "",
+              }
+            : null
+        }
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
 
       <Toaster />
     </div>
@@ -331,6 +350,7 @@ function ResultsView({
   filteredResults,
   elapsed,
   loading,
+  onSelectHit,
 }: {
   results: SearchResponse;
   filter: Filter;
@@ -338,6 +358,7 @@ function ResultsView({
   filteredResults: Hit[];
   elapsed: number | null;
   loading: boolean;
+  onSelectHit: (hit: Hit) => void;
 }) {
   const counts = {
     all: results.total,
@@ -404,7 +425,11 @@ function ResultsView({
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
           {filteredResults.map((hit) => (
-            <HitCard key={hit.platformId} hit={hit} />
+            <HitCard
+              key={hit.platformId}
+              hit={hit}
+              onClick={() => onSelectHit(hit)}
+            />
           ))}
         </div>
       )}
@@ -419,7 +444,7 @@ function ResultsView({
 /*            tag1 tag2 - example.com/user                             */
 /* ------------------------------------------------------------------ */
 
-function HitCard({ hit }: { hit: Hit }) {
+function HitCard({ hit, onClick }: { hit: Hit; onClick: () => void }) {
   const meta = STATUS_META[hit.status];
   const Icon = meta.icon;
   const platform = PLATFORMS.find((p) => p.id === hit.platformId);
@@ -430,14 +455,14 @@ function HitCard({ hit }: { hit: Hit }) {
       : undefined;
 
   return (
-    <a
-      href={hit.url}
-      target="_blank"
-      rel="noopener noreferrer nofollow"
-      className="group block"
+    <button
+      type="button"
+      onClick={onClick}
+      className="group block text-left w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-xl"
+      aria-label={`Inspect ${hit.platformName} result for @${hit.platformName}`}
     >
       <Card
-        className={`relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5 ring-1 !py-0 !gap-0 ${meta.ring}`}
+        className={`relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5 ring-1 !py-0 !gap-0 cursor-pointer ${meta.ring}`}
       >
         <CardContent className="!px-3 py-2 flex items-center gap-2.5">
           {/* Brand icon tile */}
@@ -487,6 +512,6 @@ function HitCard({ hit }: { hit: Hit }) {
           </div>
         </CardContent>
       </Card>
-    </a>
+    </button>
   );
 }

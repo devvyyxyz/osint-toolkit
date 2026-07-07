@@ -134,14 +134,8 @@ export default function Home() {
     }
   }, [cleanedUsername, toast]);
 
-  // Submit on Enter
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && canSearch) {
-      e.preventDefault();
-      runSearch();
-    }
-  };
-
+  // Submit is now handled natively by <form onSubmit>, so Enter works
+  // automatically while focus is in the input.
   // Cleanup any in-flight request on unmount
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -177,16 +171,27 @@ export default function Home() {
             or are blocked from automated checks.
           </p>
 
-          {/* Search bar */}
-          <div className="mt-6 flex flex-col sm:flex-row gap-2 max-w-2xl">
-            <div className="relative flex-1">
+          {/* Search bar — wrapped in <form> so password-manager extensions
+              (ProtonPass, 1Password, Bitwarden, etc.) recognize it as a form
+              instead of injecting data-* attributes onto the wrapper div,
+              which would cause a React hydration mismatch. The wrapper div
+              also carries suppressHydrationWarning as a belt-and-braces
+              guard against any other extension that mutates attributes. */}
+          <form
+            className="mt-6 flex flex-col sm:flex-row gap-2 max-w-2xl"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (canSearch) runSearch();
+            }}
+            suppressHydrationWarning
+          >
+            <div className="relative flex-1" suppressHydrationWarning>
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-lg select-none">
                 @
               </span>
               <Input
                 value={rawInput}
                 onChange={(e) => setRawInput(e.target.value)}
-                onKeyDown={onKeyDown}
                 placeholder="enter a username, e.g. tompeters"
                 className="pl-8 h-12 text-base"
                 autoComplete="off"
@@ -194,10 +199,12 @@ export default function Home() {
                 autoCorrect="off"
                 spellCheck={false}
                 aria-label="Username to search"
+                name="username"
+                type="text"
               />
             </div>
             <Button
-              onClick={runSearch}
+              type="submit"
               disabled={!canSearch}
               className="h-12 px-6 text-base"
               size="lg"
@@ -209,7 +216,7 @@ export default function Home() {
               )}
               {loading ? "Searching..." : "Search"}
             </Button>
-          </div>
+          </form>
 
           <p className="mt-3 text-xs text-muted-foreground">
             Probes run in parallel from the server. Many sites block automated

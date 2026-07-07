@@ -301,11 +301,11 @@ function LoadingState({
           seconds...
         </span>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
         {Array.from({ length: 12 }).map((_, i) => (
           <div
             key={i}
-            className="h-24 rounded-lg bg-muted/50 animate-pulse border border-border/40"
+            className="h-14 rounded-lg bg-muted/50 animate-pulse border border-border/40"
           />
         ))}
       </div>
@@ -402,7 +402,7 @@ function ResultsView({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
           {filteredResults.map((hit) => (
             <HitCard key={hit.platformId} hit={hit} />
           ))}
@@ -414,12 +414,20 @@ function ResultsView({
 
 /* ------------------------------------------------------------------ */
 /*  Hit card                                                           */
+/*  Layout:                                                            */
+/*    [icon] PlatformName Found                                        */
+/*            tag1 tag2 - example.com/user                             */
 /* ------------------------------------------------------------------ */
 
 function HitCard({ hit }: { hit: Hit }) {
   const meta = STATUS_META[hit.status];
   const Icon = meta.icon;
   const platform = PLATFORMS.find((p) => p.id === hit.platformId);
+  const displayUrl = hit.url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const tileBg =
+    platform && (brandColor(platform.iconSlug) ?? platform.color)
+      ? `${brandColor(platform.iconSlug) ?? platform.color}1A`
+      : undefined;
 
   return (
     <a
@@ -429,45 +437,52 @@ function HitCard({ hit }: { hit: Hit }) {
       className="group block"
     >
       <Card
-        className={`relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5 ring-1 ${meta.ring}`}
+        className={`relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5 ring-1 !py-0 !gap-0 ${meta.ring}`}
       >
-        <CardContent className="p-4 flex items-start gap-3">
-          {/* Platform icon — real brand SVG logo on a tinted tile */}
+        <CardContent className="!px-3 py-2 flex items-center gap-2.5">
+          {/* Brand icon tile */}
           <div
-            className="h-10 w-10 rounded-md flex items-center justify-center shrink-0 border border-border/60"
-            style={{
-              backgroundColor: platform
-                ? `${brandColor(platform.iconSlug) ?? platform.color}1A`
-                : undefined,
-            }}
+            className="h-8 w-8 rounded-md flex items-center justify-center shrink-0 border border-border/60"
+            style={{ backgroundColor: tileBg }}
             aria-hidden
           >
-            <BrandIcon slug={platform?.iconSlug ?? ""} size={20} colored />
+            <BrandIcon slug={platform?.iconSlug ?? ""} size={16} colored />
           </div>
 
-          {/* Main */}
+          {/* Text block */}
           <div className="flex-1 min-w-0">
+            {/* Line 1: Platform name + status */}
             <div className="flex items-center gap-2 justify-between">
-              <h3 className="font-semibold truncate">{hit.platformName}</h3>
+              <h3 className="font-semibold text-sm truncate leading-tight">
+                {hit.platformName}
+              </h3>
               <span
-                className={`inline-flex items-center gap-1 text-xs font-medium ${meta.color}`}
+                className={`inline-flex items-center gap-1 text-xs font-medium shrink-0 ${meta.color}`}
+                title={hit.detail}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="h-3 w-3" />
                 {meta.label}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5 truncate">
-              {hit.category} · {hit.url.replace(/^https?:\/\//, "")}
-            </p>
-            <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-              {hit.detail}
-            </p>
-            <div className="flex items-center gap-2 mt-2 text-[10px] font-mono text-muted-foreground/80">
+
+            {/* Line 2: tags + URL */}
+            <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground min-w-0">
+              <Badge
+                variant="secondary"
+                className="px-1.5 py-0 text-[10px] font-medium leading-none h-4"
+              >
+                {hit.category}
+              </Badge>
               {hit.httpStatus !== null && (
-                <span>HTTP {hit.httpStatus}</span>
+                <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">
+                  HTTP {hit.httpStatus}
+                </span>
               )}
-              <span>· {hit.durationMs}ms</span>
-              <ExternalLink className="h-3 w-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+              <span className="text-muted-foreground/40 shrink-0">-</span>
+              <span className="truncate font-mono text-[11px]">
+                {displayUrl}
+              </span>
+              <ExternalLink className="h-3 w-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
             </div>
           </div>
         </CardContent>

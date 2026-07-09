@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PLATFORM_MAP, SEARCH_HEADERS } from "@/lib/platforms";
+import { cacheGet, cacheSet } from "@/lib/cache";
+import { classifyBlock, type BlockInfo } from "@/lib/block-classifier";
+import {
+  probePlatformApi,
+  hasApiProbe,
+  isApiProfile,
+  type ApiProfile,
+} from "@/lib/api-probes";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +21,7 @@ export interface InspectResponse {
   httpStatus: number | null;
   durationMs: number;
   fetchedAt: string;
+  cached: boolean;
   // OpenGraph / meta
   title: string | null;
   description: string | null;
@@ -31,6 +40,11 @@ export interface InspectResponse {
   headers: Record<string, string>;
   references: Array<{ label: string; url: string }>;
   error?: string;
+  // Block classification (null when status === found / not_found)
+  block: BlockInfo | null;
+  // Official API verified profile data (only when hasApiProbe(platformId))
+  apiProfile: ApiProfile | null;
+  apiProbeError: string | null;
 }
 
 function decodeEntities(s: string): string {
@@ -46,7 +60,6 @@ function decodeEntities(s: string): string {
     .replace(/&#x([0-9a-fA-F]+);/g, (_, n) => String.fromCharCode(parseInt(n, 16)));
 }
 
-/** Match <meta property="X" content="Y"> OR <meta name="X" content="Y"> (in either attr order). */
 function extractMeta(html: string, key: string): string | null {
   const patterns = [
     new RegExp(
@@ -116,7 +129,6 @@ function buildReferences(
     },
   ];
 
-  // A few platform-specific extras that help manual verification.
   switch (platformId) {
     case "twitter":
       refs.push({
@@ -164,11 +176,14 @@ const INTERESTING_HEADERS = [
   "set-cookie",
   "strict-transport-security",
   "x-content-type-options",
+  "cf-ray", // Cloudflare
+  "x-ratelimit-remaining", // many APIs
 ];
 
 export async function GET(req: NextRequest) {
   const username = sanitize(req.nextUrl.searchParams.get("username") ?? "");
   const platformId = req.nextUrl.searchParams.get("platformId") ?? "";
+  const skipCache = req.nextUrl.searchParams.get("skipCache") === "1";
   const platform = PLATFORM_MAP[platformId];
 
   if (!username) {
@@ -185,7 +200,26 @@ export async function GET(req: NextRequest) {
   }
 
   const url = platform.url(username);
+  const cacheKey = `inspect:${platformId}:${username.toLowerCase()}`;
+
+  // --- Cache hit? ---
+  if (!skipCache) {
+    const cached = cacheGet<InspectResponse>(cacheKey);
+    if (cached) {
+      return NextResponse.json(
+        { ...cached, cached: true },
+        { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } },
+      );
+    }
+  }
+
+  // --- Kick off the HTML probe and the API probe in parallel ---
   const started = Date.now();
+  const apiProbePromise = hasApiProbe(platformId)
+    ? probePlatformApi(platformId, username)
+    : Promise.resolve(null);
+
+  let htmlResult: InspectResponse;
 
   try {
     const controller = new AbortController();
@@ -199,7 +233,6 @@ export async function GET(req: NextRequest) {
     });
     clearTimeout(timeout);
 
-    // Read up to 1 MB so we can parse meta tags + capture a text snippet.
     const reader = res.body?.getReader();
     let raw = "";
     let total = 0;
@@ -248,7 +281,13 @@ export async function GET(req: NextRequest) {
 
     const textSnippet = stripHtml(raw).slice(0, 600) || null;
 
-    const payload: InspectResponse = {
+    // --- Classify the block (if any) ---
+    const block = classifyBlock({
+      status: res.status,
+      body: raw,
+    });
+
+    htmlResult = {
       platformId,
       platformName: platform.name,
       category: platform.category,
@@ -257,6 +296,7 @@ export async function GET(req: NextRequest) {
       httpStatus: res.status,
       durationMs,
       fetchedAt: new Date().toISOString(),
+      cached: false,
       title: ogTitle ?? extractTitle(raw),
       description: ogDescription,
       image: ogImage,
@@ -271,11 +311,10 @@ export async function GET(req: NextRequest) {
       textSnippet,
       headers,
       references: buildReferences(platformId, username, url),
+      block,
+      apiProfile: null,
+      apiProbeError: null,
     };
-
-    return NextResponse.json(payload, {
-      headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
-    });
   } catch (err: unknown) {
     const durationMs = Date.now() - started;
     const aborted =
@@ -286,7 +325,13 @@ export async function GET(req: NextRequest) {
         ? err.message
         : "Unknown network error.";
 
-    const payload: InspectResponse = {
+    const block = classifyBlock({
+      status: null,
+      body: "",
+      errorMessage: message,
+    });
+
+    htmlResult = {
       platformId,
       platformName: platform.name,
       category: platform.category,
@@ -295,6 +340,7 @@ export async function GET(req: NextRequest) {
       httpStatus: null,
       durationMs,
       fetchedAt: new Date().toISOString(),
+      cached: false,
       title: null,
       description: null,
       image: null,
@@ -310,10 +356,31 @@ export async function GET(req: NextRequest) {
       headers: {},
       references: buildReferences(platformId, username, url),
       error: message,
+      block,
+      apiProfile: null,
+      apiProbeError: null,
     };
-
-    return NextResponse.json(payload, {
-      headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
-    });
   }
+
+  // --- Wait for the API probe (if any) and merge ---
+  try {
+    const apiResult = await apiProbePromise;
+    if (apiResult === null) {
+      // No probe for this platform — leave apiProfile null.
+    } else if (isApiProfile(apiResult)) {
+      htmlResult.apiProfile = apiResult;
+    } else {
+      // ApiProbeError — surface the message but don't fail the whole inspect.
+      htmlResult.apiProbeError = (apiResult as { error: string }).error;
+    }
+  } catch (e) {
+    htmlResult.apiProbeError = (e as Error).message;
+  }
+
+  // --- Cache and respond ---
+  cacheSet(cacheKey, htmlResult);
+
+  return NextResponse.json(htmlResult, {
+    headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+  });
 }

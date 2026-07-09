@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PLATFORMS, SEARCH_HEADERS, type DetectionResult } from "@/lib/platforms";
+import { cacheGet, cacheSet } from "@/lib/cache";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +24,7 @@ export interface SearchResponse {
   blocked: number;
   errors: number;
   results: SearchHit[];
+  cached: boolean;
 }
 
 function sanitize(raw: string): string | null {
@@ -157,6 +159,23 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // --- Cache hit? ---
+  const cacheKey = `search:${username.toLowerCase()}`;
+  const skipCache = req.nextUrl.searchParams.get("skipCache") === "1";
+  if (!skipCache) {
+    const cached = cacheGet<SearchResponse>(cacheKey);
+    if (cached) {
+      return NextResponse.json(
+        { ...cached, cached: true },
+        {
+          headers: {
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+          },
+        },
+      );
+    }
+  }
+
   // Probe every platform in parallel.
   const results = await Promise.all(
     PLATFORMS.map((p) => probePlatform(p.id, username)),
@@ -185,7 +204,10 @@ export async function GET(req: NextRequest) {
     blocked: results.filter((r) => r.status === "blocked").length,
     errors: results.filter((r) => r.status === "error").length,
     results,
+    cached: false,
   };
+
+  cacheSet(cacheKey, summary);
 
   return NextResponse.json(summary, {
     headers: {

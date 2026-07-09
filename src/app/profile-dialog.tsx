@@ -10,6 +10,16 @@ import {
   FileCode,
   Link2,
   Image as ImageIcon,
+  BadgeCheck,
+  ShieldAlert,
+  Clock,
+  MapPin,
+  Building2,
+  Globe,
+  Users,
+  Heart,
+  MessageCircle,
+  Database,
 } from "lucide-react";
 import {
   Dialog,
@@ -24,6 +34,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BrandIcon, brandColor } from "@/components/brand-icon";
 import { PLATFORMS } from "@/lib/platforms";
 import type { HitStatus } from "./hit-types";
+import type { ApiProfile } from "@/lib/api-probes";
+import type { BlockInfo } from "@/lib/block-classifier";
 
 export interface HitLite {
   platformId: string;
@@ -46,6 +58,7 @@ interface InspectData {
   httpStatus: number | null;
   durationMs: number;
   fetchedAt: string;
+  cached: boolean;
   title: string | null;
   description: string | null;
   image: string | null;
@@ -61,6 +74,9 @@ interface InspectData {
   headers: Record<string, string>;
   references: Array<{ label: string; url: string }>;
   error?: string;
+  block: BlockInfo | null;
+  apiProfile: ApiProfile | null;
+  apiProbeError: string | null;
 }
 
 const STATUS_COLOR: Record<HitStatus, string> = {
@@ -130,6 +146,7 @@ export function ProfileDialog({
           httpStatus: null,
           durationMs: 0,
           fetchedAt: new Date().toISOString(),
+          cached: false,
           title: null,
           description: null,
           image: null,
@@ -145,6 +162,9 @@ export function ProfileDialog({
           headers: {},
           references: [{ label: "Open original profile", url: hit.url }],
           error: (e as Error).message,
+          block: null,
+          apiProfile: null,
+          apiProbeError: null,
         });
       })
       .finally(() => setLoading(false));
@@ -163,12 +183,24 @@ export function ProfileDialog({
   const statusColor = STATUS_COLOR[hit.status];
   const statusLabel = STATUS_LABEL[hit.status];
 
-  const bannerUrl = data?.twitterImage && !bannerError ? data.twitterImage : null;
-  const pfpUrl = data?.image && !pfpError ? data.image : null;
+  // Prefer API-sourced data (it's verified) when available — otherwise
+  // fall back to OG meta tags parsed from the HTML response.
+  const api = data?.apiProfile ?? null;
+  const bannerUrl =
+    (api?.bannerUrl && !bannerError
+      ? api.bannerUrl
+      : null) ??
+    (data?.twitterImage && !bannerError ? data.twitterImage : null);
+  const pfpUrl =
+    (api?.avatarUrl && !pfpError ? api.avatarUrl : null) ??
+    (data?.image && !pfpError ? data.image : null);
   const displayName =
-    data?.title ?? data?.twitterTitle ?? hit.platformName;
-  const bio =
-    data?.description ?? data?.twitterDescription ?? null;
+    api?.displayName ??
+    api?.fullName ??
+    data?.title ??
+    data?.twitterTitle ??
+    hit.platformName;
+  const bio = api?.bio ?? data?.description ?? data?.twitterDescription ?? null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -240,6 +272,12 @@ export function ProfileDialog({
                   colored
                 />
                 <span className="truncate">{displayName}</span>
+                {api?.isVerified && (
+                  <BadgeCheck
+                    className="h-4 w-4 text-sky-500 shrink-0"
+                    aria-label="Verified"
+                  />
+                )}
               </DialogTitle>
               <DialogDescription className="text-xs flex items-center gap-2 mt-1 flex-wrap">
                 <span className="font-mono truncate">{hit.platformName}</span>
@@ -248,6 +286,22 @@ export function ProfileDialog({
                 <span className={`font-medium ${statusColor}`}>
                   · {statusLabel}
                 </span>
+                {api && (
+                  <Badge
+                    variant="outline"
+                    className="px-1.5 py-0 h-4 text-[10px] gap-0.5 border-sky-500/40 text-sky-600 dark:text-sky-400"
+                    title={`Verified via ${api.sourceLabel}`}
+                  >
+                    <BadgeCheck className="h-2.5 w-2.5" />
+                    API verified
+                  </Badge>
+                )}
+                {data?.cached && (
+                  <span className="text-[10px] text-muted-foreground/60 flex items-center gap-0.5">
+                    <Clock className="h-2.5 w-2.5" />
+                    cached
+                  </span>
+                )}
               </DialogDescription>
             </div>
           </div>
@@ -267,8 +321,119 @@ export function ProfileDialog({
             </p>
           ) : null}
 
-          {/* Error / blocked notice */}
-          {data?.error && (
+          {/* Verified API stats — only when the official API returned data */}
+          {!loading && api && (
+            <div className="rounded-md border border-sky-500/30 bg-sky-500/5 p-3">
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-300 mb-2">
+                <BadgeCheck className="h-3 w-3" />
+                Verified profile data
+                <span className="font-normal text-muted-foreground ml-1 normal-case tracking-normal">
+                  · via {api.sourceLabel}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {api.followersCount !== null &&
+                  api.followersCount !== undefined && (
+                    <ApiStat
+                      icon={<Users className="h-3.5 w-3.5" />}
+                      label="Followers"
+                      value={api.followersCount.toLocaleString()}
+                    />
+                  )}
+                {api.followingCount !== null &&
+                  api.followingCount !== undefined && (
+                    <ApiStat
+                      icon={<Heart className="h-3.5 w-3.5" />}
+                      label="Following"
+                      value={api.followingCount.toLocaleString()}
+                    />
+                  )}
+                {api.postsCount !== null && api.postsCount !== undefined && (
+                  <ApiStat
+                    icon={<MessageCircle className="h-3.5 w-3.5" />}
+                    label={platformIdLabel(api.platformId)}
+                    value={api.postsCount.toLocaleString()}
+                  />
+                )}
+                {api.joinedAt && (
+                  <ApiStat
+                    icon={<Calendar className="h-3.5 w-3.5" />}
+                    label="Joined"
+                    value={formatDate(api.joinedAt)}
+                  />
+                )}
+                {api.location && (
+                  <ApiStat
+                    icon={<MapPin className="h-3.5 w-3.5" />}
+                    label="Location"
+                    value={api.location}
+                  />
+                )}
+                {api.company && (
+                  <ApiStat
+                    icon={<Building2 className="h-3.5 w-3.5" />}
+                    label="Company"
+                    value={api.company}
+                  />
+                )}
+                {api.websiteUrl && (
+                  <ApiStat
+                    icon={<Globe className="h-3.5 w-3.5" />}
+                    label="Website"
+                    value={
+                      <a
+                        href={api.websiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        className="text-primary hover:underline truncate block"
+                      >
+                        {api.websiteUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                      </a>
+                    }
+                  />
+                )}
+                {api.isEmployee !== null &&
+                  api.isEmployee !== undefined && (
+                    <ApiStat
+                      icon={<BadgeCheck className="h-3.5 w-3.5" />}
+                      label="Hireable"
+                      value={api.isEmployee ? "Yes" : "No"}
+                    />
+                  )}
+              </div>
+            </div>
+          )}
+
+          {/* Block-type notice — replaces the generic error when the
+              classifier recognized a specific challenge type. */}
+          {!loading && data?.block && (
+            <div className="flex items-start gap-2 rounded-md border border-orange-500/40 bg-orange-500/10 p-3 text-xs">
+              <ShieldAlert className="h-4 w-4 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <div className="font-medium text-orange-700 dark:text-orange-300 flex items-center gap-2 flex-wrap">
+                  <span>{data.block.label}</span>
+                  {hit.httpStatus !== null && (
+                    <Badge
+                      variant="outline"
+                      className="px-1.5 py-0 h-4 text-[10px] font-mono"
+                    >
+                      HTTP {hit.httpStatus}
+                    </Badge>
+                  )}
+                </div>
+                <div className="text-orange-700/80 dark:text-orange-300/80 mt-1">
+                  {data.block.description}
+                </div>
+                <div className="text-orange-600/70 dark:text-orange-400/70 mt-1.5 italic">
+                  Tip: {data.block.hint}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Generic error — only shown when there's an error AND no
+              block classification (block classification covers most cases). */}
+          {!loading && data?.error && !data?.block && (
             <div className="flex items-start gap-2 rounded-md border border-red-500/40 bg-red-500/10 p-3 text-xs">
               <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
               <div>
@@ -277,6 +442,25 @@ export function ProfileDialog({
                 </div>
                 <div className="text-red-600 dark:text-red-400 mt-0.5">
                   {data.error}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* API probe error — shown when the official API probe failed
+              but the HTML inspect succeeded. Non-fatal. */}
+          {!loading && data?.apiProbeError && !api && (
+            <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <div className="font-medium text-amber-700 dark:text-amber-300">
+                  Official API probe failed
+                </div>
+                <div className="text-amber-600 dark:text-amber-400 mt-0.5">
+                  {data.apiProbeError}
+                </div>
+                <div className="text-amber-600/70 dark:text-amber-400/70 mt-1">
+                  Showing HTML-scraped data instead.
                 </div>
               </div>
             </div>
@@ -456,4 +640,55 @@ function MetaItem({
       </div>
     </div>
   );
+}
+
+function ApiStat({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-1.5 min-w-0">
+      <span className="text-sky-600 dark:text-sky-400 mt-0.5 shrink-0">{icon}</span>
+      <div className="min-w-0">
+        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+          {label}
+        </div>
+        <div className="text-xs font-medium truncate">{value}</div>
+      </div>
+    </div>
+  );
+}
+
+/** Returns a platform-appropriate label for the "posts count" stat. */
+function platformIdLabel(platformId: string): string {
+  switch (platformId) {
+    case "github":
+      return "Public repos";
+    case "mastodon":
+    case "bluesky":
+    case "twitter":
+      return "Posts";
+    case "reddit":
+      return "Karma";
+    default:
+      return "Posts";
+  }
+}
+
+function formatDate(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return iso;
+  }
 }

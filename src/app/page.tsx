@@ -33,6 +33,7 @@ interface SearchResponse {
   blocked: number;
   errors: number;
   results: Hit[];
+  cached: boolean;
 }
 
 type Filter = "all" | "found" | "not_found" | "blocked" | "error";
@@ -388,6 +389,7 @@ function ResultsView({
             {results.blocked} blocked · {counts.unknown} unknown ·{" "}
             {results.errors} errors
             {elapsed !== null && ` · ${elapsed}ms`}
+            {results.cached && " · cached (5min)"}
             {loading && " · refreshing..."}
           </p>
         </div>

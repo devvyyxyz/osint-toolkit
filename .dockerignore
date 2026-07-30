@@ -1,0 +1,59 @@
+# Build artifacts
+.next/
+out/
+dist/
+build/
+
+# Dependencies (installed fresh in Docker)
+node_modules/
+
+# Logs and temp files
+*.log
+dev.log
+server.log
+.zscripts/
+.cache/
+tmp/
+
+# Database (not used at runtime — app runs without DB)
+db/
+*.db
+*.db-journal
+prisma/migrations/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker (avoid recursive context)
+Dockerfile
+docker-compose*.yl
+.dockerignore
+
+# Docs / non-runtime files
+*.md
+README*
+DEPLOY*
+LICENSE*
+download/
+scripts/
+agent-ctx/
+mini-services/
+examples/
+
+# Env files (mount at runtime instead)
+.env
+.env.*
+!.env.example
+
+# Next.js
+next-env.d.ts
+tsconfig.tsbuildinfo

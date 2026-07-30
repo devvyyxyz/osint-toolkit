@@ -1,0 +1,84 @@
+###############################################################################
+# Username Finder — docker-compose.yml
+#
+# Drop this file (plus Dockerfile) into a folder on your UGNAS, then in the
+# UGNAS Docker GUI: Compose → New → select this file → Deploy.
+#
+# Or from the UGNAS SSH shell:
+#   docker compose up -d
+#
+# Once running, open http://<your-NAS-ip>:3000 in a browser.
+###############################################################################
+
+services:
+  username-finder:
+    # --- Image source ---
+    # Option A: build locally from the Dockerfile (default — works offline
+    # after first build, no registry needed).
+    # Option B: if you've pushed the image to a registry, comment out `build:`
+    # and uncomment `image:` with your tag.
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # image: ghcr.io/your-username/username-finder:latest
+
+    # --- Container identity ---
+    container_name: username-finder
+    restart: unless-stopped
+
+    # --- Networking ---
+    # Map container port 3000 → host port 3000.
+    # To use a different host port (e.g. 8081), change only the left number:
+    #   - "8081:3000"
+    ports:
+      - "3000:3000"
+
+    # --- Environment ---
+    # The app needs no env vars to run. Override PORT only if you also
+    # changed the EXPOSE in the Dockerfile.
+    environment:
+      - NODE_ENV=production
+      # - PORT=3000
+      # Optional: if you want to allow cross-origin requests from a specific
+      # domain, set it here. Not needed for local NAS use.
+      # - ALLOWED_ORIGIN=https://your-domain.example
+
+    # --- Health check ---
+    # UGNAS Docker GUI reads this and shows health status in the dashboard.
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+
+    # --- Labels (optional, for UGNAS dashboard display) ---
+    labels:
+      - "org.opencontainers.image.title=Username Finder"
+      - "org.opencontainers.image.description=Search @usernames across 100+ social platforms"
+      - "org.opencontainers.image.source=https://github.com/username-finder"
+      # Traefik labels (uncomment if you use Traefik as a reverse proxy on UGNAS)
+      # - "traefik.enable=true"
+      # - "traefik.http.routers.username-finder.rule=Host(`usernames.nas.local`)"
+      # - "traefik.http.services.username-finder.loadbalancer.server.port=3000"
+
+    # --- Security ---
+    # Drops all Linux capabilities and locks the container down.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+    # --- Resource limits (optional, prevents runaway memory) ---
+    # Adjust to your NAS specs. 512MB is plenty for this app.
+    mem_limit: 512m
+    mem_reservation: 128m
+    cpus: "1.0"
+
+    # --- Logging ---
+    # Cap log size so it doesn't fill your NAS disk over months.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

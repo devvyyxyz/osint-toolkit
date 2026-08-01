@@ -1,17 +1,31 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Search, ExternalLink, AlertTriangle, Check, X, HelpCircle, Loader2, ShieldAlert, Globe2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import {
+  Search,
+  ExternalLink,
+  AlertTriangle,
+  Check,
+  X,
+  HelpCircle,
+  Loader2,
+  ShieldAlert,
+  Globe2,
+  PanelLeft,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { PLATFORMS } from "@/lib/platforms";
 import { BrandIcon, brandColor } from "@/components/brand-icon";
 import { ProfileDialog } from "./profile-dialog";
+import { AppSidebar, type StatusFilter } from "./app-sidebar";
 import type { HitStatus } from "./hit-types";
 
 interface Hit {
@@ -35,8 +49,6 @@ interface SearchResponse {
   results: Hit[];
   cached: boolean;
 }
-
-type Filter = "all" | "found" | "not_found" | "blocked" | "error";
 
 const STATUS_META: Record<
   HitStatus,
@@ -78,7 +90,10 @@ export default function Home() {
   const [rawInput, setRawInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResponse | null>(null);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(
+    new Set(),
+  );
   const [elapsed, setElapsed] = useState<number | null>(null);
   const [selectedHit, setSelectedHit] = useState<Hit | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -111,7 +126,8 @@ export default function Home() {
 
     setLoading(true);
     setResults(null);
-    setFilter("all");
+    setStatusFilter("all");
+    setSelectedCategories(new Set());
     setElapsed(null);
     const started = performance.now();
 
@@ -138,150 +154,178 @@ export default function Home() {
     }
   }, [cleanedUsername, toast]);
 
-  // Submit is now handled natively by <form onSubmit>, so Enter works
-  // automatically while focus is in the input.
-  // Cleanup any in-flight request on unmount
   useEffect(() => () => abortRef.current?.abort(), []);
 
+  // Apply both the status filter AND the category filter.
   const filteredResults = useMemo(() => {
     if (!results) return [];
-    if (filter === "all") return results.results;
-    return results.results.filter((r) => r.status === filter);
-  }, [results, filter]);
+    return results.results.filter((r) => {
+      if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      if (selectedCategories.size > 0 && !selectedCategories.has(r.category))
+        return false;
+      return true;
+    });
+  }, [results, statusFilter, selectedCategories]);
 
   const totalPlatforms = PLATFORMS.length;
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    PLATFORMS.forEach((p) => set.add(p.category));
-    return Array.from(set).sort();
+
+  // Counts for the sidebar badges (computed from results, not from the
+  // already-filtered list — they reflect the full search result).
+  const counts = useMemo(() => {
+    if (!results) {
+      return {
+        all: 0,
+        found: 0,
+        not_found: 0,
+        unknown: 0,
+        blocked: 0,
+        error: 0,
+      };
+    }
+    return {
+      all: results.total,
+      found: results.found,
+      not_found: results.notFound,
+      blocked: results.blocked,
+      error: results.errors,
+      unknown:
+        results.total -
+        results.found -
+        results.notFound -
+        results.blocked -
+        results.errors,
+    };
+  }, [results]);
+
+  const toggleCategory = useCallback((cat: string) => {
+    setSelectedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  }, []);
+
+  const clearCategories = useCallback(() => {
+    setSelectedCategories(new Set());
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
-      {/* Header / Hero */}
-      <header className="border-b border-border/60 bg-gradient-to-b from-zinc-50 to-background dark:from-zinc-950 dark:to-background">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-          <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-muted-foreground mb-3">
-            <Globe2 className="h-3.5 w-3.5" />
-            Username OSINT
-          </div>
-          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight">
-            Find a username across the web
-          </h1>
-          <p className="mt-3 text-muted-foreground max-w-2xl text-sm sm:text-base">
-            Type any handle and we&apos;ll probe {totalPlatforms}+ social
-            platforms — Instagram, TikTok, X, Snapchat, GitHub, Discord,
-            Telegram, Mastodon, Spotify and many more — to see where accounts
-            with that name exist, are missing, or are blocked from automated
-            checks.
-          </p>
+    <SidebarProvider>
+      <AppSidebar
+        rawInput={rawInput}
+        onRawInputChange={setRawInput}
+        onSubmit={runSearch}
+        canSearch={canSearch}
+        loading={loading}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        selectedCategories={selectedCategories}
+        onToggleCategory={toggleCategory}
+        onClearCategories={clearCategories}
+        counts={counts}
+        totalPlatforms={totalPlatforms}
+        hasResults={!!results}
+      />
 
-          {/* Search bar — wrapped in <form> so password-manager extensions
-              (ProtonPass, 1Password, Bitwarden, etc.) recognize it as a form
-              instead of injecting data-* attributes onto the wrapper div,
-              which would cause a React hydration mismatch. The wrapper div
-              also carries suppressHydrationWarning as a belt-and-braces
-              guard against any other extension that mutates attributes. */}
-          <form
-            className="mt-6 flex flex-col sm:flex-row gap-2 max-w-2xl"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (canSearch) runSearch();
-            }}
-            suppressHydrationWarning
-          >
-            <div className="relative flex-1" suppressHydrationWarning>
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-lg select-none">
-                @
-              </span>
-              <Input
-                value={rawInput}
-                onChange={(e) => setRawInput(e.target.value)}
-                placeholder="enter a username, e.g. tompeters"
-                className="pl-8 h-12 text-base"
-                autoComplete="off"
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                aria-label="Username to search"
-                name="username"
-                type="text"
-              />
-            </div>
-            <Button
-              type="submit"
-              disabled={!canSearch}
-              className="h-12 px-6 text-base"
-              size="lg"
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+      {/* ---------- Main content area ---------- */}
+      <SidebarInset>
+        {/* Top bar: trigger + title + summary */}
+        <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b border-border/60 bg-background/95 backdrop-blur px-4">
+          <SidebarTrigger>
+            <PanelLeft className="h-4 w-4" />
+          </SidebarTrigger>
+          <Separator orientation="vertical" className="h-5" />
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Globe2 className="h-4 w-4 text-muted-foreground shrink-0" />
+            <h1 className="text-sm font-semibold truncate">
+              {results ? (
+                <>
+                  Results for{" "}
+                  <span className="font-mono text-primary">
+                    @{results.username}
+                  </span>
+                </>
               ) : (
-                <Search className="h-4 w-4 mr-2" />
+                "Find a username across the web"
               )}
-              {loading ? "Searching..." : "Search"}
-            </Button>
-          </form>
+            </h1>
+          </div>
+          {/* Active-filter chips */}
+          {(statusFilter !== "all" || selectedCategories.size > 0) && (
+            <div className="hidden sm:flex items-center gap-1.5">
+              {statusFilter !== "all" && (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-accent text-accent-foreground capitalize">
+                  {statusFilter.replace("_", " ")}
+                </span>
+              )}
+              {selectedCategories.size > 0 && (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-accent text-accent-foreground">
+                  {selectedCategories.size} categor{selectedCategories.size === 1 ? "y" : "ies"}
+                </span>
+              )}
+            </div>
+          )}
+          {/* Summary line (results only) */}
+          {results && (
+            <span className="hidden md:block text-xs text-muted-foreground font-mono ml-auto">
+              {filteredResults.length} shown · {results.found} found
+              {elapsed !== null && ` · ${elapsed}ms`}
+              {results.cached && " · cached"}
+            </span>
+          )}
+        </header>
 
-          <p className="mt-3 text-xs text-muted-foreground">
-            Probes run in parallel from the server. Many sites block automated
-            requests — results marked <span className="font-medium">Blocked</span> or{" "}
-            <span className="font-medium">Unknown</span> need a manual click to
-            verify.
-          </p>
-        </div>
-      </header>
+        {/* Main scrollable area */}
+        <main className="flex-1 p-4 sm:p-6">
+          {/* Loading skeleton */}
+          {loading && !results && (
+            <LoadingState total={totalPlatforms} />
+          )}
 
-      {/* Main */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
-        {/* Loading skeleton */}
-        {loading && !results && (
-          <LoadingState total={totalPlatforms} categories={categories} />
-        )}
+          {/* Empty hint */}
+          {!loading && !results && (
+            <Card className="border-dashed">
+              <CardContent className="py-16 text-center text-muted-foreground">
+                <Search className="h-10 w-10 mx-auto mb-4 opacity-40" />
+                <p className="text-sm font-medium mb-1">No search yet</p>
+                <p className="text-xs">
+                  Type any <span className="font-mono">@username</span> in the
+                  sidebar and press{" "}
+                  <span className="font-medium text-foreground">Search</span> to
+                  probe {totalPlatforms}+ social platforms in parallel.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Error / empty hint */}
-        {!loading && !results && (
-          <Card className="border-dashed">
-            <CardContent className="py-12 text-center text-muted-foreground">
-              <Search className="h-8 w-8 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">
-                Enter a username above and press{" "}
-                <span className="font-medium text-foreground">Search</span> to
-                start scanning.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+          {/* Results grid */}
+          {results && (
+            <ResultsView
+              results={results}
+              filteredResults={filteredResults}
+              loading={loading}
+              onSelectHit={(hit) => {
+                setSelectedHit(hit);
+                setDialogOpen(true);
+              }}
+            />
+          )}
+        </main>
 
-        {/* Results */}
-        {results && (
-          <ResultsView
-            results={results}
-            filter={filter}
-            setFilter={setFilter}
-            filteredResults={filteredResults}
-            elapsed={elapsed}
-            loading={loading}
-            onSelectHit={(hit) => {
-              setSelectedHit(hit);
-              setDialogOpen(true);
-            }}
-          />
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border/60 bg-muted/30 mt-auto">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 text-xs text-muted-foreground flex flex-col sm:flex-row justify-between gap-2">
-          <span>
-            For research &amp; personal identity checks only. Respect each
-            platform&apos;s Terms of Service.
-          </span>
-          <span>
-            {totalPlatforms} platforms · responses are heuristically classified
-          </span>
-        </div>
-      </footer>
+        {/* Footer */}
+        <footer className="border-t border-border/60 bg-muted/30 px-4 py-3">
+          <div className="text-[11px] text-muted-foreground flex flex-col sm:flex-row justify-between gap-1">
+            <span>
+              For research &amp; personal identity checks only. Respect each
+              platform&apos;s Terms of Service.
+            </span>
+            <span className="font-mono">
+              {totalPlatforms} platforms · responses are heuristically classified
+            </span>
+          </div>
+        </footer>
+      </SidebarInset>
 
       <ProfileDialog
         hit={
@@ -297,7 +341,7 @@ export default function Home() {
       />
 
       <Toaster />
-    </div>
+    </SidebarProvider>
   );
 }
 
@@ -305,15 +349,9 @@ export default function Home() {
 /*  Loading state                                                      */
 /* ------------------------------------------------------------------ */
 
-function LoadingState({
-  total,
-  categories,
-}: {
-  total: number;
-  categories: string[];
-}) {
+function LoadingState({ total }: { total: number }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center gap-3 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
         <span>
@@ -322,18 +360,11 @@ function LoadingState({
         </span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-        {Array.from({ length: 12 }).map((_, i) => (
+        {Array.from({ length: 16 }).map((_, i) => (
           <div
             key={i}
             className="h-14 rounded-lg bg-muted/50 animate-pulse border border-border/40"
           />
-        ))}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {categories.map((c) => (
-          <Badge key={c} variant="outline" className="opacity-50">
-            {c}
-          </Badge>
         ))}
       </div>
     </div>
@@ -346,95 +377,44 @@ function LoadingState({
 
 function ResultsView({
   results,
-  filter,
-  setFilter,
   filteredResults,
-  elapsed,
   loading,
   onSelectHit,
 }: {
   results: SearchResponse;
-  filter: Filter;
-  setFilter: (f: Filter) => void;
   filteredResults: Hit[];
-  elapsed: number | null;
   loading: boolean;
   onSelectHit: (hit: Hit) => void;
 }) {
-  const counts = {
-    all: results.total,
-    found: results.found,
-    not_found: results.notFound,
-    blocked: results.blocked,
-    error: results.errors,
-    unknown:
-      results.total -
-      results.found -
-      results.notFound -
-      results.blocked -
-      results.errors,
-  } as Record<Filter | "unknown", number>;
+  if (filteredResults.length === 0) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="py-12 text-center text-sm text-muted-foreground">
+          No results match the current filters. Adjust the status or category
+          filters in the sidebar.
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Summary bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            Results for
-            <span className="font-mono text-primary">@{results.username}</span>
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {results.found} found · {results.notFound} not found ·{" "}
-            {results.blocked} blocked · {counts.unknown} unknown ·{" "}
-            {results.errors} errors
-            {elapsed !== null && ` · ${elapsed}ms`}
-            {results.cached && " · cached (5min)"}
-            {loading && " · refreshing..."}
-          </p>
-        </div>
-
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-          <TabsList className="flex-wrap h-auto">
-            <TabsTrigger value="all">All ({counts.all})</TabsTrigger>
-            <TabsTrigger value="found">
-              <Check className="h-3 w-3 mr-1" />
-              Found ({counts.found})
-            </TabsTrigger>
-            <TabsTrigger value="not_found">
-              <X className="h-3 w-3 mr-1" />
-              Not Found ({counts.not_found})
-            </TabsTrigger>
-            <TabsTrigger value="blocked">
-              <ShieldAlert className="h-3 w-3 mr-1" />
-              Blocked ({counts.blocked})
-            </TabsTrigger>
-            <TabsTrigger value="error">
-              <AlertTriangle className="h-3 w-3 mr-1" />
-              Errors ({counts.errors})
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+    <div className="space-y-3">
+      {/* Inline summary (mobile-friendly) */}
+      <div className="text-xs text-muted-foreground md:hidden">
+        {filteredResults.length} of {results.total} shown
+        {loading && " · refreshing..."}
       </div>
 
       {/* Grid */}
-      {filteredResults.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            No results in this category. Switch tabs to see other platforms.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-          {filteredResults.map((hit) => (
-            <HitCard
-              key={hit.platformId}
-              hit={hit}
-              onClick={() => onSelectHit(hit)}
-            />
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+        {filteredResults.map((hit) => (
+          <HitCard
+            key={hit.platformId}
+            hit={hit}
+            onClick={() => onSelectHit(hit)}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -494,12 +474,9 @@ function HitCard({ hit, onClick }: { hit: Hit; onClick: () => void }) {
 
             {/* Line 2: tags + URL */}
             <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground min-w-0">
-              <Badge
-                variant="secondary"
-                className="px-1.5 py-0 text-[10px] font-medium leading-none h-4"
-              >
+              <span className="px-1.5 py-0 text-[10px] font-medium leading-none h-4 inline-flex items-center rounded-md bg-secondary text-secondary-foreground">
                 {hit.category}
-              </Badge>
+              </span>
               {hit.httpStatus !== null && (
                 <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">
                   HTTP {hit.httpStatus}

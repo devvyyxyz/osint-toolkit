@@ -8,6 +8,7 @@ import {
   PanelLeftOpen,
   Globe2,
   Home,
+  ArrowLeft,
   Settings as SettingsIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -159,9 +160,13 @@ export function LeftPanel({
                     ? "text-primary hover:bg-primary/10"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
-                aria-label={showSettings ? "Back" : "Settings"}
+                aria-label={showSettings ? "Back to tools" : "Settings"}
               >
-                <SettingsIcon className="h-4 w-4 shrink-0" />
+                {showSettings ? (
+                  <ArrowLeft className="h-4 w-4 shrink-0" />
+                ) : (
+                  <SettingsIcon className="h-4 w-4 shrink-0" />
+                )}
                 {!collapsed && (
                   <span>{showSettings ? "Back" : "Settings"}</span>
                 )}
@@ -169,7 +174,7 @@ export function LeftPanel({
             </TooltipTrigger>
             {collapsed && (
               <TooltipContent side="right" className="text-xs">
-                {showSettings ? "Back" : "Settings"}
+                {showSettings ? "Back to tools" : "Settings"}
               </TooltipContent>
             )}
           </Tooltip>

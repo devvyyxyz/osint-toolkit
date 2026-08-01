@@ -389,7 +389,7 @@ export function AppSidebar(props: AppSidebarProps) {
 
         <div className="border-t border-border/60" />
 
-        {/* ---------- Scrollable content: Tools + Details & Options ---------- */}
+        {/* ---------- Scrollable: Tools only ---------- */}
         <div className="flex-1 overflow-y-auto">
           {/* Tools section */}
           <CollapsibleSection
@@ -446,14 +446,35 @@ export function AppSidebar(props: AppSidebarProps) {
               ))}
             </div>
           </CollapsibleSection>
+        </div>
 
-          {/* Details & Options — directly under Tools, not at the bottom */}
+        {/* ---------- Pinned: Details & Options (always visible, no scroll) ---------- */}
+        <div className="shrink-0 border-t border-border/60 max-h-[40vh] overflow-y-auto">
+          {/* Details & Options — Status, Categories, Results */}
           <CollapsibleSection
             label="Details & Options"
             icon={<Filter className="h-3 w-3" />}
             defaultOpen={true}
           >
             <div className="space-y-3">
+              {/* Results count — shows total results for the active tool */}
+              <div>
+                <div className="text-[9px] uppercase tracking-wider text-muted-foreground/60 px-2 py-1 font-semibold">
+                  Results
+                </div>
+                <div className="px-2 py-1 text-xs text-muted-foreground">
+                  {activeTool === "username-finder" && hasResults ? (
+                    <span><span className="font-mono text-foreground">{counts.all}</span> platforms scanned</span>
+                  ) : activeTool === "domain-scanner" ? (
+                    <span>Domain scan results</span>
+                  ) : activeTool === "breach-checker" ? (
+                    <span>Breach check results</span>
+                  ) : (
+                    <span className="text-muted-foreground/50">No results yet</span>
+                  )}
+                </div>
+              </div>
+
               {/* Status section — shows status filter for Username Finder */}
               {activeTool === "username-finder" && hasResults && (
                 <div>

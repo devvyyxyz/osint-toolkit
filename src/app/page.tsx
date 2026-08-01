@@ -36,6 +36,7 @@ import { BreachCheckerView } from "./breach-checker-view";
 import { Onboarding } from "./onboarding";
 import { SettingsView } from "./settings-view";
 import { LeftPanel, type DashboardSection } from "./left-panel";
+import { SettingsSidebar } from "./settings-sidebar";
 import { SettingsProvider, useSettings } from "./settings-context";
 import type { HitStatus } from "./hit-types";
 
@@ -112,6 +113,7 @@ function HomeContent() {
   const [showSettings, setShowSettings] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<DashboardSection>("tools");
+  const [activeSettingsSection, setActiveSettingsSection] = useState("api-keys");
   const [activeTool, setActiveTool] = useState("username-finder");
   const [rawInput, setRawInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -399,6 +401,7 @@ function HomeContent() {
         onCloseSettings={() => setShowSettings(false)}
       />
 
+      {/* Tools sidebar — shown when tools section is active and settings is closed */}
       {activeSection === "tools" && !showSettings && (
         <AppSidebar
           activeTool={activeTool}
@@ -426,6 +429,14 @@ function HomeContent() {
           onBreachSubmit={runBreachCheck}
           canCheckBreach={canCheckBreach}
           breachLoading={breachLoading}
+        />
+      )}
+
+      {/* Settings sidebar — shown when settings is open */}
+      {showSettings && (
+        <SettingsSidebar
+          activeSection={activeSettingsSection}
+          onSectionChange={setActiveSettingsSection}
         />
       )}
 
@@ -472,7 +483,7 @@ function HomeContent() {
               </CardContent>
             </Card>
           ) : showSettings ? (
-            <SettingsView onBack={() => setShowSettings(false)} />
+            <SettingsView onBack={() => setShowSettings(false)} activeSection={activeSettingsSection} />
           ) : (
             <>
               {activeTool === "username-finder" && (

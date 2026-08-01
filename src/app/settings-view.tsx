@@ -26,9 +26,10 @@ import { useSettings, generateUserAgent } from "./settings-context";
 
 interface SettingsViewProps {
   onBack: () => void;
+  activeSection: string;
 }
 
-export function SettingsView({ onBack }: SettingsViewProps) {
+export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
   const { settings, updateSettings, resetSettings, resetOnboarding } = useSettings();
 
   // Local state so changes are explicit (user clicks Save)
@@ -63,11 +64,15 @@ export function SettingsView({ onBack }: SettingsViewProps) {
 
   return (
     <div className="space-y-4">
-      {/* Header — no back button (sidebar handles it) */}
+      {/* Header */}
       <div className="flex items-center gap-3">
         <h1 className="text-xl font-semibold flex items-center gap-2">
           <Globe2 className="h-5 w-5 text-muted-foreground" />
-          Settings
+          {activeSection === "api-keys" && "API Keys"}
+          {activeSection === "caching" && "Caching"}
+          {activeSection === "probing" && "Probing"}
+          {activeSection === "privacy" && "Privacy"}
+          {activeSection === "danger" && "Danger Zone"}
         </h1>
         {saved && (
           <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40">
@@ -77,8 +82,8 @@ export function SettingsView({ onBack }: SettingsViewProps) {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* ---- API Keys ---- */}
+      <div className="space-y-4 max-w-2xl">
+        {activeSection === "api-keys" && (
         <Card>
           <CardContent className="p-5 space-y-4">
             <div className="flex items-center gap-2">
@@ -138,8 +143,9 @@ export function SettingsView({ onBack }: SettingsViewProps) {
             </div>
           </CardContent>
         </Card>
+        )}
 
-        {/* ---- Cache ---- */}
+        {activeSection === "caching" && (
         <Card>
           <CardContent className="p-5 space-y-4">
             <div className="flex items-center gap-2">
@@ -205,8 +211,9 @@ export function SettingsView({ onBack }: SettingsViewProps) {
             </div>
           </CardContent>
         </Card>
+        )}
 
-        {/* ---- Probing ---- */}
+        {activeSection === "probing" && (
         <Card>
           <CardContent className="p-5 space-y-4">
             <div className="flex items-center gap-2">
@@ -269,8 +276,9 @@ export function SettingsView({ onBack }: SettingsViewProps) {
             </div>
           </CardContent>
         </Card>
+        )}
 
-        {/* ---- Danger Zone ---- */}
+        {activeSection === "danger" && (
         <Card className="border-red-500/30">
           <CardContent className="p-5 space-y-4">
             <div className="flex items-center gap-2">
@@ -320,6 +328,7 @@ export function SettingsView({ onBack }: SettingsViewProps) {
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
 
       {/* Save bar */}

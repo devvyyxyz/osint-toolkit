@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Search,
@@ -56,6 +57,7 @@ import {
   CryptoWalletView,
   TransactionTracerView,
 } from "./network-crypto-views";
+import { GenericResults, LinkListResults, ToolLoading, ToolError, ToolEmpty } from "./generic-tool-views";
 import { Onboarding } from "./onboarding";
 import { SettingsView } from "./settings-view";
 import { LeftPanel, type DashboardSection } from "./left-panel";
@@ -405,6 +407,26 @@ function HomeContent() {
       "ssl-inspector": "domain",
       "crypto-wallet": "address",
       "transaction-tracer": "address",
+      "email-lookup": "email",
+      "phone-lookup": "phone",
+      "name-search": "name",
+      "malware-scanner": "url",
+      "phishing-detector": "url",
+      "link-extractor": "url",
+      "wayback-explorer": "url",
+      "tech-detector": "url",
+      "code-search": "query",
+      "dns-history": "domain",
+      "hashtag-tracker": "tag",
+      "api-explorer": "service",
+      "password-checker": "password",
+      "reverse-image": "url",
+      "metadata-extractor": "url",
+      "vuln-scanner": "domain",
+      "privacy-audit": "username",
+      "social-graph": "username",
+      "archive-search": "query",
+      "fingerprint": "data",
     };
     const param = apiMap[activeTool];
     if (!param) return;
@@ -621,7 +643,7 @@ function HomeContent() {
               {((activeTool === "username-finder" && results) ||
                 (activeTool === "domain-scanner" && domainResult) ||
                 (activeTool === "breach-checker" && breachResult) ||
-                (["ip-lookup", "port-scanner", "dns-lookup", "ssl-inspector", "crypto-wallet", "transaction-tracer"].includes(activeTool) && networkResult)) && (
+                (networkResult && !["breach-checker", "username-finder", "domain-scanner"].includes(activeTool))) && (
                 <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => handleExport("json")} aria-label="Export JSON" title="Export as JSON">
                   <Download className="h-4 w-4" />
                 </Button>
@@ -630,7 +652,7 @@ function HomeContent() {
               {((activeTool === "username-finder" && results) ||
                 (activeTool === "domain-scanner" && domainResult) ||
                 (activeTool === "breach-checker" && breachResult) ||
-                (["ip-lookup", "port-scanner", "dns-lookup", "ssl-inspector", "crypto-wallet", "transaction-tracer"].includes(activeTool) && networkResult)) && (
+                (networkResult && !["breach-checker", "username-finder", "domain-scanner"].includes(activeTool))) && (
                 <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={handleAddToWatchlist} aria-label="Add to watchlist" title="Add to watchlist">
                   <Eye className="h-4 w-4" />
                 </Button>
@@ -721,7 +743,39 @@ function HomeContent() {
                 </>
               )}
 
-              {!["username-finder", "domain-scanner", "breach-checker", "ip-lookup", "port-scanner", "dns-lookup", "ssl-inspector", "crypto-wallet", "transaction-tracer"].includes(activeTool) && (
+              {/* All other tools — generic view */}
+              {["email-lookup", "phone-lookup", "name-search", "fingerprint", "malware-scanner", "phishing-detector", "vuln-scanner", "privacy-audit", "social-graph", "metadata-extractor", "wayback-explorer", "link-extractor", "hashtag-tracker", "archive-search", "tech-detector", "api-explorer", "code-search", "dns-history", "password-checker", "reverse-image"].includes(activeTool) && (
+                <>
+                  {networkLoading && <ToolLoading />}
+                  {networkError && !networkLoading && <ToolError message={networkError} />}
+                  {!networkLoading && !networkResult && !networkError && (
+                    <ToolEmpty
+                      icon={React.createElement(ALL_TOOLS.find(t => t.id === activeTool)?.icon ?? Globe2, { className: "h-10 w-10" })}
+                      label="No results yet"
+                      hint={`Enter a query in the sidebar and press the button to use ${ALL_TOOLS.find(t => t.id === activeTool)?.name ?? "this tool"}.`}
+                    />
+                  )}
+                  {networkResult && !networkLoading && (
+                    <>
+                      {/* Tools that return link lists */}
+                      {["name-search", "hashtag-tracker", "archive-search", "reverse-image"].includes(activeTool) ? (
+                        <LinkListResults
+                          result={networkResult as Record<string, unknown>}
+                          title={ALL_TOOLS.find(t => t.id === activeTool)?.name ?? "Results"}
+                          linksKey={activeTool === "name-search" ? "results" : activeTool === "hashtag-tracker" ? "platforms" : activeTool === "reverse-image" ? "searchUrls" : "sources"}
+                        />
+                      ) : (
+                        <GenericResults
+                          result={networkResult as Record<string, unknown>}
+                          title={ALL_TOOLS.find(t => t.id === activeTool)?.name ?? "Results"}
+                        />
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+
+              {!["username-finder", "domain-scanner", "breach-checker", "ip-lookup", "port-scanner", "dns-lookup", "ssl-inspector", "crypto-wallet", "transaction-tracer", "email-lookup", "phone-lookup", "name-search", "fingerprint", "malware-scanner", "phishing-detector", "vuln-scanner", "privacy-audit", "social-graph", "metadata-extractor", "wayback-explorer", "link-extractor", "hashtag-tracker", "archive-search", "tech-detector", "api-explorer", "code-search", "dns-history", "password-checker", "reverse-image"].includes(activeTool) && (
                 <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
                   <AlertTriangle className="h-10 w-10 mb-4 opacity-30" />
                   <p className="text-sm font-medium mb-1">Not available</p>

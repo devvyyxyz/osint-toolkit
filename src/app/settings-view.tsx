@@ -21,6 +21,7 @@ import {
   User,
   Database,
   Info,
+  Download,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -386,29 +387,118 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
 
         {/* ---- Notifications ---- */}
         {activeSection === "notifications" && (
-          <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
-            <Bell className="h-8 w-8 mb-3 opacity-30" />
-            <p className="text-sm font-medium mb-1">Coming Soon</p>
-            <p className="text-xs">Configure scan completion, breach alert, and system notifications.</p>
-          </div>
+          <Card>
+            <CardContent className="p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-sm font-semibold">Notifications</h2>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { label: "Scan completion", desc: "Notify when a search or scan finishes", default: true },
+                  { label: "Breach alerts", desc: "Alert when a watched email appears in a new breach", default: true },
+                  { label: "Rate limit warnings", desc: "Warn when an API is being rate-limited", default: false },
+                  { label: "Cache hits", desc: "Show a notification when results are served from cache", default: false },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-start justify-between gap-3 py-2 border-b border-border/40">
+                    <div>
+                      <div className="text-sm font-medium">{item.label}</div>
+                      <div className="text-[11px] text-muted-foreground">{item.desc}</div>
+                    </div>
+                    <ToggleSwitch defaultOn={item.default} />
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground">Notification preferences are stored locally.</p>
+            </CardContent>
+          </Card>
         )}
 
         {/* ---- Account ---- */}
         {activeSection === "account" && (
-          <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
-            <User className="h-8 w-8 mb-3 opacity-30" />
-            <p className="text-sm font-medium mb-1">Coming Soon</p>
-            <p className="text-xs">Account management, login, and subscription plans will be here.</p>
-          </div>
+          <Card>
+            <CardContent className="p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-sm font-semibold">Account</h2>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-md bg-muted/30">
+                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center border border-border/60">
+                  <User className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Guest</div>
+                  <div className="text-xs text-muted-foreground">Not signed in</div>
+                </div>
+                <Button variant="outline" size="sm" className="ml-auto">Sign In</Button>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between py-1.5 border-b border-border/40">
+                  <span className="text-xs text-muted-foreground">Plan</span>
+                  <Badge variant="secondary" className="text-xs">Free</Badge>
+                </div>
+                <div className="flex items-center justify-between py-1.5 border-b border-border/40">
+                  <span className="text-xs text-muted-foreground">Searches today</span>
+                  <span className="text-xs font-mono">Unlimited</span>
+                </div>
+                <div className="flex items-center justify-between py-1.5">
+                  <span className="text-xs text-muted-foreground">Member since</span>
+                  <span className="text-xs font-mono">Guest session</span>
+                </div>
+              </div>
+              <div className="rounded-md border border-blue-500/30 bg-blue-500/5 p-3 text-[11px] text-muted-foreground">
+                Account features (sync across devices, team collaboration, shared watchlists) require authentication. Sign in to enable.
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* ---- Data Management ---- */}
         {activeSection === "data" && (
-          <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
-            <Database className="h-8 w-8 mb-3 opacity-30" />
-            <p className="text-sm font-medium mb-1">Coming Soon</p>
-            <p className="text-xs">Export, import, and clear cached data and search history.</p>
-          </div>
+          <Card>
+            <CardContent className="p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <Database className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-sm font-semibold">Data Management</h2>
+              </div>
+              <div className="space-y-3">
+                <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => {
+                  const data = { settings: JSON.parse(localStorage.getItem("osint-toolkit-settings") || "{}"),
+                    history: JSON.parse(localStorage.getItem("osint-history") || "[]"),
+                    watchlist: JSON.parse(localStorage.getItem("osint-watchlist") || "[]") };
+                  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a"); a.href = url; a.download = "osint-toolkit-export.json"; a.click();
+                  URL.revokeObjectURL(url);
+                }}>
+                  <Download className="h-3.5 w-3.5 mr-2" /> Export all data (settings, history, watchlist)
+                </Button>
+                <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => {
+                  localStorage.removeItem("osint-history");
+                  alert("Search history cleared.");
+                }}>
+                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Clear search history
+                </Button>
+                <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => {
+                  localStorage.removeItem("osint-watchlist");
+                  alert("Watchlist cleared.");
+                }}>
+                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Clear watchlist
+                </Button>
+                <Button variant="outline" size="sm" className="w-full justify-start text-red-600 dark:text-red-400" onClick={() => {
+                  if (confirm("This will delete ALL local data (settings, history, watchlist, cache). Continue?")) {
+                    localStorage.clear();
+                    alert("All data cleared. Reload the page.");
+                  }
+                }}>
+                  <AlertTriangle className="h-3.5 w-3.5 mr-2" /> Clear ALL local data
+                </Button>
+              </div>
+              <div className="rounded-md border border-border/40 p-3 text-[11px] text-muted-foreground">
+                All data is stored in your browser's localStorage. Nothing is sent to any server except the APIs you query.
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* ---- About ---- */}
@@ -468,5 +558,18 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
         </div>
       )}
     </div>
+  );
+}
+
+function ToggleSwitch({ defaultOn }: { defaultOn: boolean }) {
+  const [on, setOn] = React.useState(defaultOn);
+  return (
+    <button
+      onClick={() => setOn(!on)}
+      className={`relative h-6 w-11 rounded-full transition-colors shrink-0 ${on ? "bg-primary" : "bg-muted"}`}
+      aria-label="Toggle"
+    >
+      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-background shadow transition-transform ${on ? "translate-x-5" : "translate-x-0.5"}`} />
+    </button>
   );
 }

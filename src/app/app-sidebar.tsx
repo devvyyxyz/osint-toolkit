@@ -22,10 +22,6 @@ import {
   Lock,
   ChevronDown,
   ChevronRight,
-  PanelLeftClose,
-  Home,
-  ArrowLeft,
-  Settings as SettingsIcon,
   Mail,
   MessageSquare,
   Fingerprint,
@@ -49,18 +45,6 @@ import {
   Bookmark,
   Layers,
 } from "lucide-react";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInput,
-  SidebarSeparator,
-  useSidebar,
-} from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -74,6 +58,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
 import { BrandIcon } from "@/components/brand-icon";
 import { PLATFORMS } from "@/lib/platforms";
 import type { HitStatus } from "./hit-types";
@@ -101,254 +86,85 @@ const TOOL_GROUPS: ToolGroup[] = [
   {
     label: "Identity",
     tools: [
-      {
-        id: "username-finder",
-        name: "Username Finder",
-        description: "Search @usernames across 100+ social platforms",
-        icon: AtSign,
-        enabled: true,
-      },
-      {
-        id: "email-lookup",
-        name: "Email Lookup",
-        description: "Find accounts linked to an email address across services",
-        icon: Mail,
-        enabled: false,
-      },
-      {
-        id: "phone-lookup",
-        name: "Phone Lookup",
-        description: "Find accounts linked to a phone number via caller ID & social",
-        icon: Phone,
-        enabled: false,
-      },
-      {
-        id: "reverse-image",
-        name: "Reverse Image",
-        description: "Find where a profile picture appears across the web",
-        icon: ImageIcon,
-        enabled: false,
-      },
-      {
-        id: "name-search",
-        name: "Name Search",
-        description: "Search for a person by real name across public records",
-        icon: Users,
-        enabled: false,
-      },
-      {
-        id: "fingerprint",
-        name: "Fingerprint",
-        description: "Generate a digital fingerprint for an identity",
-        icon: Fingerprint,
-        enabled: false,
-      },
+      { id: "username-finder", name: "Username Finder", description: "Search @usernames across 100+ social platforms", icon: AtSign, enabled: true },
+      { id: "email-lookup", name: "Email Lookup", description: "Find accounts linked to an email address across services", icon: Mail, enabled: false },
+      { id: "phone-lookup", name: "Phone Lookup", description: "Find accounts linked to a phone number via caller ID & social", icon: Phone, enabled: false },
+      { id: "reverse-image", name: "Reverse Image", description: "Find where a profile picture appears across the web", icon: ImageIcon, enabled: false },
+      { id: "name-search", name: "Name Search", description: "Search for a person by real name across public records", icon: Users, enabled: false },
+      { id: "fingerprint", name: "Fingerprint", description: "Generate a digital fingerprint for an identity", icon: Fingerprint, enabled: false },
     ],
   },
   {
     label: "Network",
     tools: [
-      {
-        id: "domain-scanner",
-        name: "Domain Scanner",
-        description: "DNS, WHOIS, SSL, subdomains, tech stack & security headers",
-        icon: Globe,
-        enabled: true,
-      },
-      {
-        id: "ip-lookup",
-        name: "IP Lookup",
-        description: "Geolocate an IP and see ASN, ISP, and hosting info",
-        icon: MapPin,
-        enabled: false,
-      },
-      {
-        id: "wifi-scanner",
-        name: "WiFi Scanner",
-        description: "Scan nearby WiFi networks and their security",
-        icon: Wifi,
-        enabled: false,
-      },
-      {
-        id: "port-scanner",
-        name: "Port Scanner",
-        description: "Scan a host for open ports and running services",
-        icon: Network,
-        enabled: false,
-      },
-      {
-        id: "dns-lookup",
-        name: "DNS Lookup",
-        description: "Query DNS records for a domain across all record types",
-        icon: Server,
-        enabled: false,
-      },
-      {
-        id: "ssl-inspector",
-        name: "SSL Inspector",
-        description: "Inspect SSL/TLS certificate chain for any domain",
-        icon: Lock,
-        enabled: false,
-      },
+      { id: "domain-scanner", name: "Domain Scanner", description: "DNS, WHOIS, SSL, subdomains, tech stack & security headers", icon: Globe, enabled: true },
+      { id: "ip-lookup", name: "IP Lookup", description: "Geolocate an IP and see ASN, ISP, and hosting info", icon: MapPin, enabled: false },
+      { id: "wifi-scanner", name: "WiFi Scanner", description: "Scan nearby WiFi networks and their security", icon: Wifi, enabled: false },
+      { id: "port-scanner", name: "Port Scanner", description: "Scan a host for open ports and running services", icon: Network, enabled: false },
+      { id: "dns-lookup", name: "DNS Lookup", description: "Query DNS records for a domain across all record types", icon: Server, enabled: false },
+      { id: "ssl-inspector", name: "SSL Inspector", description: "Inspect SSL/TLS certificate chain for any domain", icon: Lock, enabled: false },
     ],
   },
   {
     label: "Security",
     tools: [
-      {
-        id: "breach-checker",
-        name: "Breach Checker",
-        description: "Check if an email or username appears in known data breaches",
-        icon: ShieldCheck,
-        enabled: true,
-      },
-      {
-        id: "password-checker",
-        name: "Password Strength",
-        description: "Check password strength and breach history",
-        icon: Key,
-        enabled: false,
-      },
-      {
-        id: "malware-scanner",
-        name: "Malware Scanner",
-        description: "Scan a URL or file against known malware databases",
-        icon: ShieldAlert,
-        enabled: false,
-      },
-      {
-        id: "phishing-detector",
-        name: "Phishing Detector",
-        description: "Check if a URL is flagged as a phishing site",
-        icon: Crosshair,
-        enabled: false,
-      },
-      {
-        id: "vuln-scanner",
-        name: "Vuln Scanner",
-        description: "Scan a domain for known CVEs and vulnerabilities",
-        icon: AlertTriangle,
-        enabled: false,
-      },
-      {
-        id: "privacy-audit",
-        name: "Privacy Audit",
-        description: "Audit your digital footprint across platforms",
-        icon: Eye,
-        enabled: false,
-      },
+      { id: "breach-checker", name: "Breach Checker", description: "Check if an email or username appears in known data breaches", icon: ShieldCheck, enabled: true },
+      { id: "password-checker", name: "Password Strength", description: "Check password strength and breach history", icon: Key, enabled: false },
+      { id: "malware-scanner", name: "Malware Scanner", description: "Scan a URL or file against known malware databases", icon: ShieldAlert, enabled: false },
+      { id: "phishing-detector", name: "Phishing Detector", description: "Check if a URL is flagged as a phishing site", icon: Crosshair, enabled: false },
+      { id: "vuln-scanner", name: "Vuln Scanner", description: "Scan a domain for known CVEs and vulnerabilities", icon: AlertTriangle, enabled: false },
+      { id: "privacy-audit", name: "Privacy Audit", description: "Audit your digital footprint across platforms", icon: Eye, enabled: false },
     ],
   },
   {
     label: "Investigation",
     tools: [
-      {
-        id: "social-graph",
-        name: "Social Graph",
-        description: "Map connections between accounts across platforms",
-        icon: Share2,
-        enabled: false,
-      },
-      {
-        id: "metadata-extractor",
-        name: "Metadata Extractor",
-        description: "Extract EXIF and metadata from images and documents",
-        icon: FileSearch,
-        enabled: false,
-      },
-      {
-        id: "wayback-explorer",
-        name: "Wayback Explorer",
-        description: "Browse archived snapshots of any URL over time",
-        icon: Clock,
-        enabled: false,
-      },
-      {
-        id: "link-extractor",
-        name: "Link Extractor",
-        description: "Extract all links from a web page and analyze them",
-        icon: Link2,
-        enabled: false,
-      },
-      {
-        id: "hashtag-tracker",
-        name: "Hashtag Tracker",
-        description: "Track a hashtag across social platforms",
-        icon: Hash,
-        enabled: false,
-      },
-      {
-        id: "archive-search",
-        name: "Archive Search",
-        description: "Search deleted content across archive services",
-        icon: Bookmark,
-        enabled: false,
-      },
+      { id: "social-graph", name: "Social Graph", description: "Map connections between accounts across platforms", icon: Share2, enabled: false },
+      { id: "metadata-extractor", name: "Metadata Extractor", description: "Extract EXIF and metadata from images and documents", icon: FileSearch, enabled: false },
+      { id: "wayback-explorer", name: "Wayback Explorer", description: "Browse archived snapshots of any URL over time", icon: Clock, enabled: false },
+      { id: "link-extractor", name: "Link Extractor", description: "Extract all links from a web page and analyze them", icon: Link2, enabled: false },
+      { id: "hashtag-tracker", name: "Hashtag Tracker", description: "Track a hashtag across social platforms", icon: Hash, enabled: false },
+      { id: "archive-search", name: "Archive Search", description: "Search deleted content across archive services", icon: Bookmark, enabled: false },
     ],
   },
   {
     label: "Crypto & Finance",
     tools: [
-      {
-        id: "crypto-wallet",
-        name: "Crypto Wallet",
-        description: "Look up a blockchain wallet address and transaction history",
-        icon: Bitcoin,
-        enabled: false,
-      },
-      {
-        id: "transaction-tracer",
-        name: "Transaction Tracer",
-        description: "Trace cryptocurrency transactions across the blockchain",
-        icon: Activity,
-        enabled: false,
-      },
+      { id: "crypto-wallet", name: "Crypto Wallet", description: "Look up a blockchain wallet address and transaction history", icon: Bitcoin, enabled: false },
+      { id: "transaction-tracer", name: "Transaction Tracer", description: "Trace cryptocurrency transactions across the blockchain", icon: Activity, enabled: false },
     ],
   },
   {
     label: "Developer",
     tools: [
-      {
-        id: "tech-detector",
-        name: "Tech Detector",
-        description: "Identify technologies powering any website",
-        icon: Code,
-        enabled: false,
-      },
-      {
-        id: "api-explorer",
-        name: "API Explorer",
-        description: "Discover and test public APIs for any service",
-        icon: Database,
-        enabled: false,
-      },
-      {
-        id: "github-search",
-        name: "Code Search",
-        description: "Search for code, repos, and developer profiles",
-        icon: FileSearch,
-        enabled: false,
-      },
-      {
-        id: "dns-history",
-        name: "DNS History",
-        description: "View historical DNS records for a domain",
-        icon: Calendar,
-        enabled: false,
-      },
+      { id: "tech-detector", name: "Tech Detector", description: "Identify technologies powering any website", icon: Code, enabled: false },
+      { id: "api-explorer", name: "API Explorer", description: "Discover and test public APIs for any service", icon: Database, enabled: false },
+      { id: "github-search", name: "Code Search", description: "Search for code, repos, and developer profiles", icon: FileSearch, enabled: false },
+      { id: "dns-history", name: "DNS History", description: "View historical DNS records for a domain", icon: Calendar, enabled: false },
     ],
   },
 ];
 
-/** Flatten all tools for counting / lookup */
 export const ALL_TOOLS: ToolDef[] = TOOL_GROUPS.flatMap((g) => g.tools);
 const ENABLED_COUNT = ALL_TOOLS.filter((t) => t.enabled).length;
 const TOTAL_COUNT = ALL_TOOLS.length;
 
+const STATUS_ITEMS: {
+  value: StatusFilter;
+  label: string;
+  icon: typeof Check;
+  color: string;
+}[] = [
+  { value: "all", label: "All", icon: Filter, color: "text-foreground" },
+  { value: "found", label: "Found", icon: Check, color: "text-emerald-600 dark:text-emerald-400" },
+  { value: "not_found", label: "Not Found", icon: X, color: "text-zinc-500 dark:text-zinc-400" },
+  { value: "unknown", label: "Unknown", icon: HelpCircle, color: "text-amber-600 dark:text-amber-400" },
+  { value: "blocked", label: "Blocked", icon: ShieldAlert, color: "text-orange-600 dark:text-orange-400" },
+  { value: "error", label: "Errors", icon: AlertTriangle, color: "text-red-600 dark:text-red-400" },
+];
+
 /* ------------------------------------------------------------------ */
 /*  Collapsible section wrapper                                        */
-/*  Wraps a sidebar group in a Collapsible so users can hide/show      */
-/*  each section. The label row is the trigger.                        */
 /* ------------------------------------------------------------------ */
 
 function CollapsibleSection({
@@ -367,25 +183,21 @@ function CollapsibleSection({
   const [open, setOpen] = React.useState(defaultOpen);
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="group/section">
-      <SidebarGroup>
-        <CollapsibleTrigger asChild>
-          <SidebarGroupLabel className="flex items-center justify-between cursor-pointer select-none hover:bg-accent/50 transition-colors text-[10px] uppercase tracking-wider text-muted-foreground py-1.5">
-            <span className="flex items-center gap-1.5">
-              {icon}
-              {label}
-            </span>
-            <span className="flex items-center gap-1">
-              {badge}
-              <ChevronDown className="h-3 w-3 transition-transform group-data-[state=open]/section:rotate-180" />
-            </span>
-          </SidebarGroupLabel>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <SidebarGroupContent>
-            {children}
-          </SidebarGroupContent>
-        </CollapsibleContent>
-      </SidebarGroup>
+      <CollapsibleTrigger asChild>
+        <button className="w-full flex items-center justify-between px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:bg-accent/50 transition-colors cursor-pointer select-none">
+          <span className="flex items-center gap-1.5">
+            {icon}
+            {label}
+          </span>
+          <span className="flex items-center gap-1">
+            {badge}
+            <ChevronDown className="h-3 w-3 transition-transform group-data-[state=open]/section:rotate-180" />
+          </span>
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="px-1 py-1">{children}</div>
+      </CollapsibleContent>
     </Collapsible>
   );
 }
@@ -422,8 +234,6 @@ export interface AppSidebarProps {
   onDomainSubmit: () => void;
   canScanDomain: boolean;
   domainLoading: boolean;
-
-  /** Breach Checker props (only used when activeTool === "breach-checker"). */
   breachInput: string;
   onBreachInputChange: (v: string) => void;
   onBreachSubmit: () => void;
@@ -431,135 +241,61 @@ export interface AppSidebarProps {
   breachLoading: boolean;
 }
 
-const STATUS_ITEMS: {
-  value: StatusFilter;
-  label: string;
-  icon: typeof Check;
-  color: string;
-}[] = [
-  { value: "all", label: "All", icon: Filter, color: "text-foreground" },
-  { value: "found", label: "Found", icon: Check, color: "text-emerald-600 dark:text-emerald-400" },
-  { value: "not_found", label: "Not Found", icon: X, color: "text-zinc-500 dark:text-zinc-400" },
-  { value: "unknown", label: "Unknown", icon: HelpCircle, color: "text-amber-600 dark:text-amber-400" },
-  { value: "blocked", label: "Blocked", icon: ShieldAlert, color: "text-orange-600 dark:text-orange-400" },
-  { value: "error", label: "Errors", icon: AlertTriangle, color: "text-red-600 dark:text-red-400" },
-];
-
 /* ------------------------------------------------------------------ */
-/*  Sidebar with internal trigger                                      */
+/*  Main component — plain div panel (no shadcn Sidebar)               */
 /* ------------------------------------------------------------------ */
 
-function SidebarInternalToggle() {
-  const { toggleSidebar, open } = useSidebar();
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleSidebar}
-          className="h-7 w-7 shrink-0"
-          aria-label={open ? "Close sidebar" : "Open sidebar"}
-        >
-          <PanelLeftClose className="h-4 w-4" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="right" className="text-xs">
-        {open ? "Close sidebar" : "Open sidebar"}
-      </TooltipContent>
-    </Tooltip>
-  );
-}
+export function AppSidebar(props: AppSidebarProps) {
+  const {
+    activeTool,
+    onToolChange,
+    rawInput,
+    onRawInputChange,
+    onSubmit,
+    canSearch,
+    loading,
+    statusFilter,
+    onStatusFilterChange,
+    selectedCategories,
+    onToggleCategory,
+    onClearCategories,
+    counts,
+    totalPlatforms,
+    hasResults,
+    domainInput,
+    onDomainInputChange,
+    onDomainSubmit,
+    canScanDomain,
+    domainLoading,
+    breachInput,
+    onBreachInputChange,
+    onBreachSubmit,
+    canCheckBreach,
+    breachLoading,
+  } = props;
 
-function HomeButton({ onClick }: { onClick: () => void }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClick}
-          className="h-7 w-7 shrink-0"
-          aria-label="Back to home"
-        >
-          <Home className="h-4 w-4" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="right" className="text-xs">
-        Back to home
-      </TooltipContent>
-    </Tooltip>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Main component                                                     */
-/* ------------------------------------------------------------------ */
-
-export function AppSidebar({
-  activeTool,
-  onToolChange,
-  rawInput,
-  onRawInputChange,
-  onSubmit,
-  canSearch,
-  loading,
-  statusFilter,
-  onStatusFilterChange,
-  selectedCategories,
-  onToggleCategory,
-  onClearCategories,
-  counts,
-  totalPlatforms,
-  hasResults,
-  domainInput,
-  onDomainInputChange,
-  onDomainSubmit,
-  canScanDomain,
-  domainLoading,
-  breachInput,
-  onBreachInputChange,
-  onBreachSubmit,
-  canCheckBreach,
-  breachLoading,
-}: AppSidebarProps) {
   const categories = React.useMemo(() => {
     const set = new Set<string>();
     PLATFORMS.forEach((p) => set.add(p.category));
     return Array.from(set).sort();
   }, []);
 
-  // Access the mobile sidebar state so we can auto-close it on mobile
-  // when a tool is selected or a search is submitted.
-  const { isMobile, setOpenMobile } = useSidebar();
-
-  const handleToolChange = (toolId: string) => {
-    onToolChange(toolId);
-    if (isMobile) setOpenMobile(false);
-  };
-
-  const handleSubmitAndClose = (submitFn: () => void) => {
-    submitFn();
-    if (isMobile) setOpenMobile(false);
-  };
-
   return (
-    <Sidebar>
+    <div className="w-64 shrink-0 flex flex-col h-full border-r border-border/60 bg-background overflow-hidden">
       <TooltipProvider delayDuration={300}>
         {/* ---------- Header: title + search ---------- */}
-        <SidebarHeader>
-          {/* Title row */}
-          <div className="flex items-center gap-2 px-2 py-2">
+        <div className="shrink-0">
+          <div className="flex items-center gap-2 px-3 py-2">
             <Globe2 className="h-4 w-4 text-muted-foreground shrink-0" />
             <span className="font-semibold text-sm flex-1">Search</span>
           </div>
 
-          {/* Tool-specific search bar — shown FIRST, above tools */}
+          {/* Tool-specific search bar */}
           {activeTool === "username-finder" && (
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (canSearch) handleSubmitAndClose(onSubmit);
+                if (canSearch) onSubmit();
               }}
               className="px-2 pb-2 space-y-2"
               suppressHydrationWarning
@@ -568,7 +304,7 @@ export function AppSidebar({
                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-sm select-none pointer-events-none">
                   @
                 </span>
-                <SidebarInput
+                <Input
                   value={rawInput}
                   onChange={(e) => onRawInputChange(e.target.value)}
                   placeholder="enter a username"
@@ -582,17 +318,8 @@ export function AppSidebar({
                   type="text"
                 />
               </div>
-              <Button
-                type="submit"
-                disabled={!canSearch}
-                className="w-full h-9"
-                size="sm"
-              >
-                {loading ? (
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                ) : (
-                  <Search className="h-3.5 w-3.5 mr-1.5" />
-                )}
+              <Button type="submit" disabled={!canSearch} className="w-full h-9" size="sm">
+                {loading ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Search className="h-3.5 w-3.5 mr-1.5" />}
                 {loading ? "Searching..." : "Search"}
               </Button>
             </form>
@@ -602,14 +329,14 @@ export function AppSidebar({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (canScanDomain) handleSubmitAndClose(onDomainSubmit);
+                if (canScanDomain) onDomainSubmit();
               }}
               className="px-2 pb-2 space-y-2"
               suppressHydrationWarning
             >
               <div className="relative" suppressHydrationWarning>
                 <Globe className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground h-3.5 w-3.5 pointer-events-none" />
-                <SidebarInput
+                <Input
                   value={domainInput}
                   onChange={(e) => onDomainInputChange(e.target.value)}
                   placeholder="example.com"
@@ -623,17 +350,8 @@ export function AppSidebar({
                   type="text"
                 />
               </div>
-              <Button
-                type="submit"
-                disabled={!canScanDomain}
-                className="w-full h-9"
-                size="sm"
-              >
-                {domainLoading ? (
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                ) : (
-                  <Search className="h-3.5 w-3.5 mr-1.5" />
-                )}
+              <Button type="submit" disabled={!canScanDomain} className="w-full h-9" size="sm">
+                {domainLoading ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Search className="h-3.5 w-3.5 mr-1.5" />}
                 {domainLoading ? "Scanning..." : "Scan"}
               </Button>
             </form>
@@ -643,12 +361,12 @@ export function AppSidebar({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (canCheckBreach) handleSubmitAndClose(onBreachSubmit);
+                if (canCheckBreach) onBreachSubmit();
               }}
               className="px-2 pb-2 space-y-2"
               suppressHydrationWarning
             >
-              <SidebarInput
+              <Input
                 value={breachInput}
                 onChange={(e) => onBreachInputChange(e.target.value)}
                 placeholder="email or username"
@@ -661,43 +379,30 @@ export function AppSidebar({
                 name="breach-query"
                 type="text"
               />
-              <Button
-                type="submit"
-                disabled={!canCheckBreach}
-                className="w-full h-9"
-                size="sm"
-              >
-                {breachLoading ? (
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                ) : (
-                  <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />
-                )}
+              <Button type="submit" disabled={!canCheckBreach} className="w-full h-9" size="sm">
+                {breachLoading ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />}
                 {breachLoading ? "Checking..." : "Check"}
               </Button>
             </form>
           )}
-        </SidebarHeader>
+        </div>
 
-        <SidebarSeparator />
+        <div className="border-t border-border/60" />
 
-        {/* ---------- Content: scrollable ---------- */}
-        <SidebarContent className="overflow-y-auto">
-          <SidebarSeparator className="my-1" />
-
-          {/* Tools selector — collapsible, grouped by category */}
+        {/* ---------- Scrollable content: Tools + Details & Options ---------- */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Tools section */}
           <CollapsibleSection
             label={`Tools (${ENABLED_COUNT}/${TOTAL_COUNT})`}
             icon={<Filter className="h-3 w-3" />}
             defaultOpen={true}
           >
-            <div className="space-y-2 px-1">
+            <div className="space-y-2">
               {TOOL_GROUPS.map((group) => (
                 <div key={group.label}>
-                  {/* Group label */}
                   <div className="text-[9px] uppercase tracking-wider text-muted-foreground/60 px-2 py-1 font-semibold">
                     {group.label}
                   </div>
-                  {/* Tools in this group */}
                   <div className="space-y-0.5">
                     {group.tools.map((tool) => {
                       const ToolIcon = tool.icon;
@@ -709,7 +414,7 @@ export function AppSidebar({
                               type="button"
                               disabled={!tool.enabled}
                               onClick={() => {
-                                if (tool.enabled) handleToolChange(tool.id);
+                                if (tool.enabled) onToolChange(tool.id);
                               }}
                               className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
                                 isActive && tool.enabled
@@ -721,29 +426,16 @@ export function AppSidebar({
                               aria-disabled={!tool.enabled}
                             >
                               <ToolIcon className="h-3.5 w-3.5 shrink-0" />
-                              <span className="flex-1 text-left truncate">
-                                {tool.name}
-                              </span>
-                              {!tool.enabled && (
-                                <Lock className="h-2.5 w-2.5 shrink-0 opacity-60" />
-                              )}
-                              {isActive && tool.enabled && (
-                                <Check className="h-3 w-3 shrink-0" />
-                              )}
+                              <span className="flex-1 text-left truncate">{tool.name}</span>
+                              {!tool.enabled && <Lock className="h-2.5 w-2.5 shrink-0 opacity-60" />}
+                              {isActive && tool.enabled && <Check className="h-3 w-3 shrink-0" />}
                             </button>
                           </TooltipTrigger>
-                          <TooltipContent
-                            side="right"
-                            className="max-w-[200px] text-xs"
-                          >
+                          <TooltipContent side="right" className="max-w-[200px] text-xs">
                             <div className="font-medium">{tool.name}</div>
-                            <div className="text-muted-foreground mt-0.5">
-                              {tool.description}
-                            </div>
+                            <div className="text-muted-foreground mt-0.5">{tool.description}</div>
                             {!tool.enabled && (
-                              <div className="text-amber-600 dark:text-amber-400 mt-1 font-medium">
-                                Coming soon
-                              </div>
+                              <div className="text-amber-600 dark:text-amber-400 mt-1 font-medium">Coming soon</div>
                             )}
                           </TooltipContent>
                         </Tooltip>
@@ -755,16 +447,14 @@ export function AppSidebar({
             </div>
           </CollapsibleSection>
 
-        <SidebarSeparator />
-
-        {/* Details & Options section */}
+          {/* Details & Options — directly under Tools, not at the bottom */}
           <CollapsibleSection
             label="Details & Options"
             icon={<Filter className="h-3 w-3" />}
             defaultOpen={true}
           >
-            <div className="space-y-3 px-1">
-              {/* Status filter — Username Finder only */}
+            <div className="space-y-3">
+              {/* Status section — shows status filter for Username Finder */}
               {activeTool === "username-finder" && hasResults && (
                 <div>
                   <div className="text-[9px] uppercase tracking-wider text-muted-foreground/60 px-2 py-1 font-semibold">
@@ -774,26 +464,19 @@ export function AppSidebar({
                     {STATUS_ITEMS.map((item) => {
                       const Icon = item.icon;
                       const active = statusFilter === item.value;
-                      const count =
-                        item.value === "all"
-                          ? counts.all
-                          : counts[item.value as keyof typeof counts];
+                      const count = item.value === "all" ? counts.all : counts[item.value as keyof typeof counts];
                       return (
                         <button
                           key={item.value}
                           type="button"
                           onClick={() => onStatusFilterChange(item.value)}
                           className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
-                            active
-                              ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                            active ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                           }`}
                         >
                           <Icon className={`h-3.5 w-3.5 shrink-0 ${active ? "" : item.color}`} />
                           <span className="flex-1 text-left">{item.label}</span>
-                          <span className="text-[10px] font-mono text-muted-foreground">
-                            {count}
-                          </span>
+                          <span className="text-[10px] font-mono text-muted-foreground">{count}</span>
                         </button>
                       );
                     })}
@@ -801,7 +484,7 @@ export function AppSidebar({
                 </div>
               )}
 
-              {/* Category filter — Username Finder only */}
+              {/* Categories section */}
               {activeTool === "username-finder" && hasResults && (
                 <div>
                   <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-muted-foreground/60 px-2 py-1 font-semibold">
@@ -825,33 +508,21 @@ export function AppSidebar({
                   <div className="space-y-0.5 max-h-[30vh] overflow-y-auto">
                     {categories.map((cat) => {
                       const active = selectedCategories.has(cat);
-                      const platformCount = PLATFORMS.filter(
-                        (p) => p.category === cat,
-                      ).length;
+                      const platformCount = PLATFORMS.filter((p) => p.category === cat).length;
                       return (
                         <button
                           key={cat}
                           type="button"
                           onClick={() => onToggleCategory(cat)}
                           className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
-                            active
-                              ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                            active ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                           }`}
                         >
-                          <span
-                            className={`h-3 w-3 rounded-sm border flex items-center justify-center shrink-0 ${
-                              active
-                                ? "bg-primary border-primary text-primary-foreground"
-                                : "border-border"
-                            }`}
-                          >
+                          <span className={`h-3 w-3 rounded-sm border flex items-center justify-center shrink-0 ${active ? "bg-primary border-primary text-primary-foreground" : "border-border"}`}>
                             {active && <Check className="h-2.5 w-2.5" />}
                           </span>
                           <span className="flex-1 text-left">{cat}</span>
-                          <span className="text-[10px] font-mono text-muted-foreground">
-                            {platformCount}
-                          </span>
+                          <span className="text-[10px] font-mono text-muted-foreground">{platformCount}</span>
                         </button>
                       );
                     })}
@@ -873,10 +544,7 @@ export function AppSidebar({
                       { label: "Blocked", color: "bg-orange-500", desc: "403/429 challenge" },
                       { label: "Error", color: "bg-red-500", desc: "Network failure" },
                     ].map((item) => (
-                      <div
-                        key={item.label}
-                        className="flex items-center gap-2 text-[11px] text-muted-foreground"
-                      >
+                      <div key={item.label} className="flex items-center gap-2 text-[11px] text-muted-foreground">
                         <span className={`h-2 w-2 rounded-full shrink-0 ${item.color}`} />
                         <span className="font-medium text-foreground">{item.label}</span>
                         <span className="text-muted-foreground/70 truncate">— {item.desc}</span>
@@ -920,53 +588,31 @@ export function AppSidebar({
                   </div>
                   <div className="px-2 space-y-1.5 text-[11px] text-muted-foreground">
                     <p>
-                      Checks if an email address or username appears in known data
-                      breaches using the free{" "}
-                      <a
-                        href="https://haveibeenpwned.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
+                      Checks if an email address or username appears in known data breaches using the free{" "}
+                      <a href="https://haveibeenpwned.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                         Have I Been Pwned
                       </a>{" "}
                       API.
                     </p>
-                    <div className="space-y-1 pt-1">
-                      <div className="font-medium text-foreground">Returns:</div>
-                      {[
-                        "Number of breaches the query appears in",
-                        "Breach names, dates, and data classes exposed",
-                        "Whether the query appears in pastes",
-                      ].map((item, i) => (
-                        <div key={i} className="flex items-start gap-1.5">
-                          <Check className="h-3 w-3 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
-                          <span>{item}</span>
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 </div>
               )}
             </div>
           </CollapsibleSection>
-        </SidebarContent>
+        </div>
 
         {/* ---------- Footer ---------- */}
-        <SidebarFooter>
-          <SidebarSeparator />
-          <div className="px-3 py-2 text-[10px] text-muted-foreground space-y-1">
-            <div className="flex items-center justify-between">
-              <span>Platforms</span>
-              <span className="font-mono">{totalPlatforms}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Cache</span>
-              <span className="font-mono">5 min TTL</span>
-            </div>
+        <div className="shrink-0 border-t border-border/60 px-3 py-2 text-[10px] text-muted-foreground space-y-1">
+          <div className="flex items-center justify-between">
+            <span>Platforms</span>
+            <span className="font-mono">{totalPlatforms}</span>
           </div>
-        </SidebarFooter>
+          <div className="flex items-center justify-between">
+            <span>Cache</span>
+            <span className="font-mono">5 min TTL</span>
+          </div>
+        </div>
       </TooltipProvider>
-    </Sidebar>
+    </div>
   );
 }

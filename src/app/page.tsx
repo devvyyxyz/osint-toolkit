@@ -48,6 +48,14 @@ import { AppSidebar, ALL_TOOLS, type StatusFilter } from "./app-sidebar";
 import { DomainScannerView } from "./domain-scanner-view";
 import { LandingPage } from "./landing-page";
 import { BreachCheckerView } from "./breach-checker-view";
+import {
+  IpLookupView,
+  PortScannerView,
+  DnsLookupView,
+  SslInspectorView,
+  CryptoWalletView,
+  TransactionTracerView,
+} from "./network-crypto-views";
 import { Onboarding } from "./onboarding";
 import { SettingsView } from "./settings-view";
 import { LeftPanel, type DashboardSection } from "./left-panel";
@@ -155,6 +163,12 @@ function HomeContent() {
   const [breachResult, setBreachResult] = useState<unknown>(null);
   const [breachError, setBreachError] = useState<string | null>(null);
   const [breachMode, setBreachMode] = useState<"account" | "password">("account");
+
+  // Network/Crypto tools state (shared input for ip-lookup, port-scanner, dns-lookup, ssl-inspector, crypto-wallet, transaction-tracer)
+  const [networkInput, setNetworkInput] = useState("");
+  const [networkLoading, setNetworkLoading] = useState(false);
+  const [networkResult, setNetworkResult] = useState<unknown>(null);
+  const [networkError, setNetworkError] = useState<string | null>(null);
 
   const { toast } = useToast();
   const abortRef = useRef<AbortController | null>(null);
@@ -379,6 +393,47 @@ function HomeContent() {
     });
   }, []);
 
+  // Network/Crypto tool handler — routes to the correct API based on activeTool
+  const runNetworkLookup = useCallback(async () => {
+    const query = networkInput.trim();
+    if (!query) return;
+
+    const apiMap: Record<string, string> = {
+      "ip-lookup": "ip",
+      "port-scanner": "host",
+      "dns-lookup": "domain",
+      "ssl-inspector": "domain",
+      "crypto-wallet": "address",
+      "transaction-tracer": "address",
+    };
+    const param = apiMap[activeTool];
+    if (!param) return;
+
+    setNetworkLoading(true);
+    setNetworkResult(null);
+    setNetworkError(null);
+
+    try {
+      const res = await fetch(`/api/${activeTool}?${param}=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setNetworkResult(data);
+      addEntry({ tool: activeTool, query });
+    } catch (err) {
+      setNetworkError((err as Error).message);
+      toast({ title: "Lookup failed", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setNetworkLoading(false);
+    }
+  }, [networkInput, activeTool, addEntry, toast]);
+
+  // Clear network result when switching tools
+  useEffect(() => {
+    setNetworkResult(null);
+    setNetworkError(null);
+    setNetworkInput("");
+  }, [activeTool]);
+
   // Keyboard shortcuts
   const sidebarInputRef = useRef<HTMLInputElement>(null);
   useKeyboardShortcuts({
@@ -412,6 +467,8 @@ function HomeContent() {
       downloadJSON(domainResult, `domain-scan-${(domainResult as { domain: string }).domain}`);
     } else if (activeTool === "breach-checker" && breachResult) {
       downloadJSON(breachResult, `breach-check-${(breachResult as { query: string }).query}`);
+    } else if (["ip-lookup", "port-scanner", "dns-lookup", "ssl-inspector", "crypto-wallet", "transaction-tracer"].includes(activeTool) && networkResult) {
+      downloadJSON(networkResult, `${activeTool}-${networkInput.trim()}`);
     }
   };
 
@@ -426,6 +483,9 @@ function HomeContent() {
     } else if (activeTool === "breach-checker" && breachResult) {
       addWatch({ tool: "breach-checker", query: (breachResult as { query: string }).query, label: (breachResult as { query: string }).query });
       toast({ title: "Added to watchlist", description: `${(breachResult as { query: string }).query} will be monitored.` });
+    } else if (["ip-lookup", "port-scanner", "dns-lookup", "ssl-inspector", "crypto-wallet", "transaction-tracer"].includes(activeTool) && networkResult) {
+      addWatch({ tool: activeTool, query: networkInput.trim(), label: networkInput.trim() });
+      toast({ title: "Added to watchlist", description: `${networkInput.trim()} will be monitored.` });
     }
   };
 
@@ -514,6 +574,10 @@ function HomeContent() {
           onToggleStar={toggleStar}
           breachMode={breachMode}
           onBreachModeChange={setBreachMode}
+          networkInput={networkInput}
+          onNetworkInputChange={setNetworkInput}
+          onNetworkSubmit={runNetworkLookup}
+          networkLoading={networkLoading}
         />
       )}
 
@@ -556,7 +620,8 @@ function HomeContent() {
               {/* Export button — only when results exist */}
               {((activeTool === "username-finder" && results) ||
                 (activeTool === "domain-scanner" && domainResult) ||
-                (activeTool === "breach-checker" && breachResult)) && (
+                (activeTool === "breach-checker" && breachResult) ||
+                (["ip-lookup", "port-scanner", "dns-lookup", "ssl-inspector", "crypto-wallet", "transaction-tracer"].includes(activeTool) && networkResult)) && (
                 <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => handleExport("json")} aria-label="Export JSON" title="Export as JSON">
                   <Download className="h-4 w-4" />
                 </Button>
@@ -564,7 +629,8 @@ function HomeContent() {
               {/* Watchlist button — only when results exist */}
               {((activeTool === "username-finder" && results) ||
                 (activeTool === "domain-scanner" && domainResult) ||
-                (activeTool === "breach-checker" && breachResult)) && (
+                (activeTool === "breach-checker" && breachResult) ||
+                (["ip-lookup", "port-scanner", "dns-lookup", "ssl-inspector", "crypto-wallet", "transaction-tracer"].includes(activeTool) && networkResult)) && (
                 <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={handleAddToWatchlist} aria-label="Add to watchlist" title="Add to watchlist">
                   <Eye className="h-4 w-4" />
                 </Button>
@@ -630,7 +696,32 @@ function HomeContent() {
                   onModeChange={setBreachMode}
                 />
               )}
-              {!["username-finder", "domain-scanner", "breach-checker"].includes(activeTool) && (
+
+              {/* Network tools */}
+              {["ip-lookup", "port-scanner", "dns-lookup", "ssl-inspector", "crypto-wallet", "transaction-tracer"].includes(activeTool) && (
+                <>
+                  {activeTool === "ip-lookup" && (
+                    <IpLookupView result={networkResult as import("./network-crypto-views").IpResult | null} loading={networkLoading} error={networkError} />
+                  )}
+                  {activeTool === "port-scanner" && (
+                    <PortScannerView result={networkResult as import("./network-crypto-views").PortScanData | null} loading={networkLoading} error={networkError} />
+                  )}
+                  {activeTool === "dns-lookup" && (
+                    <DnsLookupView result={networkResult as import("./network-crypto-views").DnsData | null} loading={networkLoading} error={networkError} />
+                  )}
+                  {activeTool === "ssl-inspector" && (
+                    <SslInspectorView result={networkResult as import("./network-crypto-views").SslData | null} loading={networkLoading} error={networkError} />
+                  )}
+                  {activeTool === "crypto-wallet" && (
+                    <CryptoWalletView result={networkResult as import("./network-crypto-views").WalletData | null} loading={networkLoading} error={networkError} />
+                  )}
+                  {activeTool === "transaction-tracer" && (
+                    <TransactionTracerView result={networkResult as import("./network-crypto-views").TraceData | null} loading={networkLoading} error={networkError} />
+                  )}
+                </>
+              )}
+
+              {!["username-finder", "domain-scanner", "breach-checker", "ip-lookup", "port-scanner", "dns-lookup", "ssl-inspector", "crypto-wallet", "transaction-tracer"].includes(activeTool) && (
                 <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
                   <AlertTriangle className="h-10 w-10 mb-4 opacity-30" />
                   <p className="text-sm font-medium mb-1">Not available</p>

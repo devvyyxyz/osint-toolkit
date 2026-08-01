@@ -99,11 +99,11 @@ const TOOL_GROUPS: ToolGroup[] = [
     label: "Network",
     tools: [
       { id: "domain-scanner", name: "Domain Scanner", description: "DNS, WHOIS, SSL, subdomains, tech stack & security headers", icon: Globe, enabled: true },
-      { id: "ip-lookup", name: "IP Lookup", description: "Geolocate an IP and see ASN, ISP, and hosting info", icon: MapPin, enabled: false },
+      { id: "ip-lookup", name: "IP Lookup", description: "Geolocate an IP and see ASN, ISP, and hosting info", icon: MapPin, enabled: true },
       { id: "wifi-scanner", name: "WiFi Scanner", description: "Scan nearby WiFi networks and their security", icon: Wifi, enabled: false },
-      { id: "port-scanner", name: "Port Scanner", description: "Scan a host for open ports and running services", icon: Network, enabled: false },
-      { id: "dns-lookup", name: "DNS Lookup", description: "Query DNS records for a domain across all record types", icon: Server, enabled: false },
-      { id: "ssl-inspector", name: "SSL Inspector", description: "Inspect SSL/TLS certificate chain for any domain", icon: Lock, enabled: false },
+      { id: "port-scanner", name: "Port Scanner", description: "Scan a host for open ports and running services", icon: Network, enabled: true },
+      { id: "dns-lookup", name: "DNS Lookup", description: "Query DNS records for a domain across all record types", icon: Server, enabled: true },
+      { id: "ssl-inspector", name: "SSL Inspector", description: "Inspect SSL/TLS certificate chain for any domain", icon: Lock, enabled: true },
     ],
   },
   {
@@ -131,8 +131,8 @@ const TOOL_GROUPS: ToolGroup[] = [
   {
     label: "Crypto & Finance",
     tools: [
-      { id: "crypto-wallet", name: "Crypto Wallet", description: "Look up a blockchain wallet address and transaction history", icon: Bitcoin, enabled: false },
-      { id: "transaction-tracer", name: "Transaction Tracer", description: "Trace cryptocurrency transactions across the blockchain", icon: Activity, enabled: false },
+      { id: "crypto-wallet", name: "Crypto Wallet", description: "Look up a blockchain wallet address and transaction history", icon: Bitcoin, enabled: true },
+      { id: "transaction-tracer", name: "Transaction Tracer", description: "Trace cryptocurrency transactions across the blockchain", icon: Activity, enabled: true },
     ],
   },
   {
@@ -306,6 +306,11 @@ export interface AppSidebarProps {
   /** Breach Checker mode */
   breachMode: "account" | "password";
   onBreachModeChange: (m: "account" | "password") => void;
+  /** Generic network/crypto tool input (shared by ip-lookup, port-scanner, dns-lookup, ssl-inspector, crypto-wallet, transaction-tracer) */
+  networkInput: string;
+  onNetworkInputChange: (v: string) => void;
+  onNetworkSubmit: () => void;
+  networkLoading: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -467,6 +472,90 @@ export function AppSidebar(props: AppSidebarProps) {
                 </div>
               )}
             </div>
+          )}
+
+          {/* IP Lookup */}
+          {activeTool === "ip-lookup" && (
+            <form onSubmit={(e) => { e.preventDefault(); if (props.networkInput) props.onNetworkSubmit(); }}
+              className="px-2 pb-2 space-y-2" suppressHydrationWarning>
+              <Input value={props.networkInput} onChange={(e) => props.onNetworkInputChange(e.target.value)}
+                placeholder="IP or hostname (e.g. 8.8.8.8)" className="h-9" autoComplete="off" autoCapitalize="off"
+                autoCorrect="off" spellCheck={false} aria-label="IP or hostname to look up" type="text" />
+              <Button type="submit" disabled={!props.networkInput?.trim()} className="w-full h-9" size="sm">
+                {props.networkLoading ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <MapPin className="h-3.5 w-3.5 mr-1.5" />}
+                {props.networkLoading ? "Looking up..." : "Look up"}
+              </Button>
+            </form>
+          )}
+
+          {/* Port Scanner */}
+          {activeTool === "port-scanner" && (
+            <form onSubmit={(e) => { e.preventDefault(); if (props.networkInput) props.onNetworkSubmit(); }}
+              className="px-2 pb-2 space-y-2" suppressHydrationWarning>
+              <Input value={props.networkInput} onChange={(e) => props.onNetworkInputChange(e.target.value)}
+                placeholder="hostname or IP" className="h-9" autoComplete="off" autoCapitalize="off"
+                autoCorrect="off" spellCheck={false} aria-label="Host to scan" type="text" />
+              <Button type="submit" disabled={!props.networkInput?.trim()} className="w-full h-9" size="sm">
+                {props.networkLoading ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Network className="h-3.5 w-3.5 mr-1.5" />}
+                {props.networkLoading ? "Scanning..." : "Scan"}
+              </Button>
+            </form>
+          )}
+
+          {/* DNS Lookup */}
+          {activeTool === "dns-lookup" && (
+            <form onSubmit={(e) => { e.preventDefault(); if (props.networkInput) props.onNetworkSubmit(); }}
+              className="px-2 pb-2 space-y-2" suppressHydrationWarning>
+              <Input value={props.networkInput} onChange={(e) => props.onNetworkInputChange(e.target.value)}
+                placeholder="example.com" className="h-9" autoComplete="off" autoCapitalize="off"
+                autoCorrect="off" spellCheck={false} aria-label="Domain to look up DNS" type="text" />
+              <Button type="submit" disabled={!props.networkInput?.trim()} className="w-full h-9" size="sm">
+                {props.networkLoading ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Server className="h-3.5 w-3.5 mr-1.5" />}
+                {props.networkLoading ? "Looking up..." : "Look up"}
+              </Button>
+            </form>
+          )}
+
+          {/* SSL Inspector */}
+          {activeTool === "ssl-inspector" && (
+            <form onSubmit={(e) => { e.preventDefault(); if (props.networkInput) props.onNetworkSubmit(); }}
+              className="px-2 pb-2 space-y-2" suppressHydrationWarning>
+              <Input value={props.networkInput} onChange={(e) => props.onNetworkInputChange(e.target.value)}
+                placeholder="example.com" className="h-9" autoComplete="off" autoCapitalize="off"
+                autoCorrect="off" spellCheck={false} aria-label="Domain to inspect SSL" type="text" />
+              <Button type="submit" disabled={!props.networkInput?.trim()} className="w-full h-9" size="sm">
+                {props.networkLoading ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Lock className="h-3.5 w-3.5 mr-1.5" />}
+                {props.networkLoading ? "Inspecting..." : "Inspect"}
+              </Button>
+            </form>
+          )}
+
+          {/* Crypto Wallet */}
+          {activeTool === "crypto-wallet" && (
+            <form onSubmit={(e) => { e.preventDefault(); if (props.networkInput) props.onNetworkSubmit(); }}
+              className="px-2 pb-2 space-y-2" suppressHydrationWarning>
+              <Input value={props.networkInput} onChange={(e) => props.onNetworkInputChange(e.target.value)}
+                placeholder="BTC or ETH address" className="h-9 font-mono text-xs" autoComplete="off" autoCapitalize="off"
+                autoCorrect="off" spellCheck={false} aria-label="Wallet address to look up" type="text" />
+              <Button type="submit" disabled={!props.networkInput?.trim()} className="w-full h-9" size="sm">
+                {props.networkLoading ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Bitcoin className="h-3.5 w-3.5 mr-1.5" />}
+                {props.networkLoading ? "Looking up..." : "Look up"}
+              </Button>
+            </form>
+          )}
+
+          {/* Transaction Tracer */}
+          {activeTool === "transaction-tracer" && (
+            <form onSubmit={(e) => { e.preventDefault(); if (props.networkInput) props.onNetworkSubmit(); }}
+              className="px-2 pb-2 space-y-2" suppressHydrationWarning>
+              <Input value={props.networkInput} onChange={(e) => props.onNetworkInputChange(e.target.value)}
+                placeholder="BTC or ETH address" className="h-9 font-mono text-xs" autoComplete="off" autoCapitalize="off"
+                autoCorrect="off" spellCheck={false} aria-label="Wallet address to trace" type="text" />
+              <Button type="submit" disabled={!props.networkInput?.trim()} className="w-full h-9" size="sm">
+                {props.networkLoading ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Activity className="h-3.5 w-3.5 mr-1.5" />}
+                {props.networkLoading ? "Tracing..." : "Trace"}
+              </Button>
+            </form>
           )}
         </div>
 

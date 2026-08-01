@@ -24,6 +24,7 @@ import {
   ChevronRight,
   PanelLeftClose,
   Home,
+  ArrowLeft,
   Settings as SettingsIcon,
   Mail,
   MessageSquare,
@@ -340,7 +341,7 @@ const TOOL_GROUPS: ToolGroup[] = [
 ];
 
 /** Flatten all tools for counting / lookup */
-const ALL_TOOLS: ToolDef[] = TOOL_GROUPS.flatMap((g) => g.tools);
+export const ALL_TOOLS: ToolDef[] = TOOL_GROUPS.flatMap((g) => g.tools);
 const ENABLED_COUNT = ALL_TOOLS.filter((t) => t.enabled).length;
 const TOTAL_COUNT = ALL_TOOLS.length;
 
@@ -398,6 +399,9 @@ export interface AppSidebarProps {
   onToolChange: (toolId: string) => void;
   onGoHome: () => void;
   onOpenSettings: () => void;
+  /** When true, the settings button becomes a "Back" button */
+  showSettings: boolean;
+  onCloseSettings: () => void;
   rawInput: string;
   onRawInputChange: (v: string) => void;
   onSubmit: () => void;
@@ -502,6 +506,8 @@ export function AppSidebar({
   onToolChange,
   onGoHome,
   onOpenSettings,
+  showSettings,
+  onCloseSettings,
   rawInput,
   onRawInputChange,
   onSubmit,
@@ -681,7 +687,12 @@ export function AppSidebar({
               </Button>
             </form>
           )}
+        </SidebarHeader>
 
+        <SidebarSeparator />
+
+        {/* ---------- Content: scrollable ---------- */}
+        <SidebarContent className="overflow-y-auto">
           <SidebarSeparator className="my-1" />
 
           {/* Tools selector — collapsible, grouped by category */}
@@ -754,212 +765,223 @@ export function AppSidebar({
               ))}
             </div>
           </CollapsibleSection>
-        </SidebarHeader>
 
         <SidebarSeparator />
 
-        {/* ---------- Content: collapsible filter sections ---------- */}
-        <SidebarContent>
-          {/* Status filter — Username Finder only */}
-          {activeTool === "username-finder" && hasResults && (
-            <CollapsibleSection
-              label="Status"
-              icon={<Filter className="h-3 w-3" />}
-              defaultOpen={true}
-            >
-              <div className="space-y-0.5 px-1">
-                {STATUS_ITEMS.map((item) => {
-                  const Icon = item.icon;
-                  const active = statusFilter === item.value;
-                  const count =
-                    item.value === "all"
-                      ? counts.all
-                      : counts[item.value as keyof typeof counts];
-                  return (
-                    <button
-                      key={item.value}
-                      type="button"
-                      onClick={() => onStatusFilterChange(item.value)}
-                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
-                        active
-                          ? "bg-accent text-accent-foreground"
-                          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                      }`}
-                    >
-                      <Icon className={`h-3.5 w-3.5 shrink-0 ${active ? "" : item.color}`} />
-                      <span className="flex-1 text-left">{item.label}</span>
-                      <span className="text-[10px] font-mono text-muted-foreground">
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </CollapsibleSection>
-          )}
-
-          {/* Category filter — Username Finder only */}
-          {activeTool === "username-finder" && hasResults && (
-            <CollapsibleSection
-              label="Categories"
-              icon={<Tag className="h-3 w-3" />}
-              defaultOpen={false}
-              badge={
-                selectedCategories.size > 0 ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onClearCategories();
-                    }}
-                    className="text-[10px] normal-case tracking-normal text-primary hover:underline"
-                  >
-                    clear
-                  </button>
-                ) : undefined
-              }
-            >
-              <div className="space-y-0.5 px-1 max-h-[40vh] overflow-y-auto">
-                {categories.map((cat) => {
-                  const active = selectedCategories.has(cat);
-                  const platformCount = PLATFORMS.filter(
-                    (p) => p.category === cat,
-                  ).length;
-                  return (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => onToggleCategory(cat)}
-                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
-                        active
-                          ? "bg-accent text-accent-foreground"
-                          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                      }`}
-                    >
-                      <span
-                        className={`h-3 w-3 rounded-sm border flex items-center justify-center shrink-0 ${
-                          active
-                            ? "bg-primary border-primary text-primary-foreground"
-                            : "border-border"
-                        }`}
-                      >
-                        {active && <Check className="h-2.5 w-2.5" />}
-                      </span>
-                      <span className="flex-1 text-left">{cat}</span>
-                      <span className="text-[10px] font-mono text-muted-foreground">
-                        {platformCount}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </CollapsibleSection>
-          )}
-
-          {/* Legend — Username Finder only, collapsible */}
-          {activeTool === "username-finder" && (
-            <CollapsibleSection
-              label="Legend"
-              defaultOpen={false}
-            >
-              <div className="px-2 space-y-1">
-                {[
-                  { label: "Found", color: "bg-emerald-500", desc: "Profile page loaded" },
-                  { label: "Not Found", color: "bg-zinc-400", desc: "404 or no-account page" },
-                  { label: "Unknown", color: "bg-amber-500", desc: "Inconclusive response" },
-                  { label: "Blocked", color: "bg-orange-500", desc: "403/429 challenge" },
-                  { label: "Error", color: "bg-red-500", desc: "Network failure" },
-                ].map((item) => (
-                  <div
-                    key={item.label}
-                    className="flex items-center gap-2 text-[11px] text-muted-foreground"
-                  >
-                    <span className={`h-2 w-2 rounded-full shrink-0 ${item.color}`} />
-                    <span className="font-medium text-foreground">{item.label}</span>
-                    <span className="text-muted-foreground/70 truncate">— {item.desc}</span>
+        {/* Details & Options section */}
+          <CollapsibleSection
+            label="Details & Options"
+            icon={<Filter className="h-3 w-3" />}
+            defaultOpen={true}
+          >
+            <div className="space-y-3 px-1">
+              {/* Status filter — Username Finder only */}
+              {activeTool === "username-finder" && hasResults && (
+                <div>
+                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground/60 px-2 py-1 font-semibold">
+                    Status
                   </div>
-                ))}
-              </div>
-            </CollapsibleSection>
-          )}
-
-          {/* Domain Scanner info — collapsible */}
-          {activeTool === "domain-scanner" && (
-            <CollapsibleSection
-              label="Scan includes"
-              icon={<Check className="h-3 w-3" />}
-              defaultOpen={false}
-            >
-              <div className="px-2 space-y-1 text-[11px] text-muted-foreground">
-                {[
-                  "DNS records (A, AAAA, MX, NS, TXT, CAA, SOA)",
-                  "WHOIS / RDAP registration data",
-                  "SSL certificate details",
-                  "Subdomain enumeration (~40 names)",
-                  "Tech stack fingerprinting",
-                  "Security headers analysis",
-                  "Wayback Machine history",
-                  "robots.txt & sitemap.xml",
-                ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-1.5">
-                    <Check className="h-3 w-3 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
-                    <span>{item}</span>
+                  <div className="space-y-0.5">
+                    {STATUS_ITEMS.map((item) => {
+                      const Icon = item.icon;
+                      const active = statusFilter === item.value;
+                      const count =
+                        item.value === "all"
+                          ? counts.all
+                          : counts[item.value as keyof typeof counts];
+                      return (
+                        <button
+                          key={item.value}
+                          type="button"
+                          onClick={() => onStatusFilterChange(item.value)}
+                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
+                            active
+                              ? "bg-accent text-accent-foreground"
+                              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                          }`}
+                        >
+                          <Icon className={`h-3.5 w-3.5 shrink-0 ${active ? "" : item.color}`} />
+                          <span className="flex-1 text-left">{item.label}</span>
+                          <span className="text-[10px] font-mono text-muted-foreground">
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
-            </CollapsibleSection>
-          )}
-
-          {/* Breach Checker info — collapsible */}
-          {activeTool === "breach-checker" && (
-            <CollapsibleSection
-              label="How it works"
-              icon={<ShieldCheck className="h-3 w-3" />}
-              defaultOpen={false}
-            >
-              <div className="px-2 space-y-1.5 text-[11px] text-muted-foreground">
-                <p>
-                  Checks if an email address or username appears in known data
-                  breaches using the free{" "}
-                  <a
-                    href="https://haveibeenpwned.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    Have I Been Pwned
-                  </a>{" "}
-                  API.
-                </p>
-                <div className="space-y-1 pt-1">
-                  <div className="font-medium text-foreground">Returns:</div>
-                  {[
-                    "Number of breaches the query appears in",
-                    "Breach names, dates, and data classes exposed",
-                    "Whether the query appears in pastes",
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-1.5">
-                      <Check className="h-3 w-3 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
                 </div>
-              </div>
-            </CollapsibleSection>
-          )}
+              )}
+
+              {/* Category filter — Username Finder only */}
+              {activeTool === "username-finder" && hasResults && (
+                <div>
+                  <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-muted-foreground/60 px-2 py-1 font-semibold">
+                    <span className="flex items-center gap-1.5">
+                      <Tag className="h-3 w-3" />
+                      Categories
+                    </span>
+                    {selectedCategories.size > 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onClearCategories();
+                        }}
+                        className="text-[10px] normal-case tracking-normal text-primary hover:underline"
+                      >
+                        clear
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-0.5 max-h-[30vh] overflow-y-auto">
+                    {categories.map((cat) => {
+                      const active = selectedCategories.has(cat);
+                      const platformCount = PLATFORMS.filter(
+                        (p) => p.category === cat,
+                      ).length;
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => onToggleCategory(cat)}
+                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
+                            active
+                              ? "bg-accent text-accent-foreground"
+                              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                          }`}
+                        >
+                          <span
+                            className={`h-3 w-3 rounded-sm border flex items-center justify-center shrink-0 ${
+                              active
+                                ? "bg-primary border-primary text-primary-foreground"
+                                : "border-border"
+                            }`}
+                          >
+                            {active && <Check className="h-2.5 w-2.5" />}
+                          </span>
+                          <span className="flex-1 text-left">{cat}</span>
+                          <span className="text-[10px] font-mono text-muted-foreground">
+                            {platformCount}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Legend — Username Finder only */}
+              {activeTool === "username-finder" && (
+                <div>
+                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground/60 px-2 py-1 font-semibold">
+                    Legend
+                  </div>
+                  <div className="px-2 space-y-1">
+                    {[
+                      { label: "Found", color: "bg-emerald-500", desc: "Profile page loaded" },
+                      { label: "Not Found", color: "bg-zinc-400", desc: "404 or no-account page" },
+                      { label: "Unknown", color: "bg-amber-500", desc: "Inconclusive response" },
+                      { label: "Blocked", color: "bg-orange-500", desc: "403/429 challenge" },
+                      { label: "Error", color: "bg-red-500", desc: "Network failure" },
+                    ].map((item) => (
+                      <div
+                        key={item.label}
+                        className="flex items-center gap-2 text-[11px] text-muted-foreground"
+                      >
+                        <span className={`h-2 w-2 rounded-full shrink-0 ${item.color}`} />
+                        <span className="font-medium text-foreground">{item.label}</span>
+                        <span className="text-muted-foreground/70 truncate">— {item.desc}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Domain Scanner info */}
+              {activeTool === "domain-scanner" && (
+                <div>
+                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground/60 px-2 py-1 font-semibold">
+                    Scan includes
+                  </div>
+                  <div className="px-2 space-y-1 text-[11px] text-muted-foreground">
+                    {[
+                      "DNS records (A, AAAA, MX, NS, TXT, CAA, SOA)",
+                      "WHOIS / RDAP registration data",
+                      "SSL certificate details",
+                      "Subdomain enumeration (~40 names)",
+                      "Tech stack fingerprinting",
+                      "Security headers analysis",
+                      "Wayback Machine history",
+                      "robots.txt & sitemap.xml",
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-start gap-1.5">
+                        <Check className="h-3 w-3 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Breach Checker info */}
+              {activeTool === "breach-checker" && (
+                <div>
+                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground/60 px-2 py-1 font-semibold">
+                    How it works
+                  </div>
+                  <div className="px-2 space-y-1.5 text-[11px] text-muted-foreground">
+                    <p>
+                      Checks if an email address or username appears in known data
+                      breaches using the free{" "}
+                      <a
+                        href="https://haveibeenpwned.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        Have I Been Pwned
+                      </a>{" "}
+                      API.
+                    </p>
+                    <div className="space-y-1 pt-1">
+                      <div className="font-medium text-foreground">Returns:</div>
+                      {[
+                        "Number of breaches the query appears in",
+                        "Breach names, dates, and data classes exposed",
+                        "Whether the query appears in pastes",
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-start gap-1.5">
+                          <Check className="h-3 w-3 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CollapsibleSection>
         </SidebarContent>
 
         {/* ---------- Footer ---------- */}
         <SidebarFooter>
           <SidebarSeparator />
-          {/* Settings button */}
+          {/* Settings / Back button — same position, swaps label/icon */}
           <button
             type="button"
-            onClick={onOpenSettings}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            onClick={showSettings ? onCloseSettings : onOpenSettings}
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs transition-colors ${
+              showSettings
+                ? "text-primary hover:bg-primary/10"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+            }`}
           >
-            <SettingsIcon className="h-3.5 w-3.5 shrink-0" />
-            <span>Settings</span>
+            {showSettings ? (
+              <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
+            ) : (
+              <SettingsIcon className="h-3.5 w-3.5 shrink-0" />
+            )}
+            <span>{showSettings ? "Back" : "Settings"}</span>
           </button>
           <div className="px-3 py-2 text-[10px] text-muted-foreground space-y-1">
             <div className="flex items-center justify-between">

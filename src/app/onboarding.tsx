@@ -63,57 +63,36 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   const canFinish = step === STEPS.length - 1;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Header */}
-      <header className="border-b border-border/60">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-2">
-          <Globe2 className="h-4 w-4 text-muted-foreground" />
-          <span className="font-semibold text-sm">OSINT Toolkit Setup</span>
-          <Badge variant="secondary" className="ml-auto text-[10px]">
-            Step {step + 1} of {STEPS.length}
-          </Badge>
-        </div>
-      </header>
-
-      {/* Progress bar */}
-      <div className="h-1 bg-muted">
-        <div
-          className="h-full bg-primary transition-all duration-300"
-          style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
-        />
-      </div>
-
-      {/* Content */}
-      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-8">
-        <div className="max-w-2xl w-full">
-          {/* Step indicator dots */}
-          <div className="flex items-center justify-center gap-2 mb-8">
-            {STEPS.map((s, i) => {
-              const Icon = s.icon;
-              const isActive = i === step;
-              const isDone = i < step;
-              return (
-                <div key={s.id} className="flex items-center">
-                  <div
-                    className={`flex items-center justify-center h-9 w-9 rounded-full border-2 transition-all ${
-                      isActive
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : isDone
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground"
-                    }`}
-                  >
-                    {isDone ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
-                  </div>
-                  {i < STEPS.length - 1 && (
-                    <div
-                      className={`w-8 h-0.5 mx-1 ${i < step ? "bg-primary" : "bg-border"}`}
-                    />
-                  )}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
+      <div className="max-w-2xl w-full">
+        {/* Progress dots */}
+        <div className="flex items-center justify-center gap-2 mb-8">
+          {STEPS.map((s, i) => {
+            const Icon = s.icon;
+            const isActive = i === step;
+            const isDone = i < step;
+            return (
+              <div key={s.id} className="flex items-center">
+                <div
+                  className={`flex items-center justify-center h-9 w-9 rounded-full border-2 transition-all ${
+                    isActive
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : isDone
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground"
+                  }`}
+                >
+                  {isDone ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                 </div>
-              );
-            })}
-          </div>
+                {i < STEPS.length - 1 && (
+                  <div
+                    className={`w-8 h-0.5 mx-1 ${i < step ? "bg-primary" : "bg-border"}`}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
 
           {/* Step content */}
           {step === 0 && <WelcomeStep />}
@@ -170,8 +149,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               </Button>
             )}
           </div>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }

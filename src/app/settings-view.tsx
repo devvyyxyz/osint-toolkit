@@ -63,12 +63,8 @@ export function SettingsView({ onBack }: SettingsViewProps) {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
+      {/* Header — no back button (sidebar handles it) */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4 mr-1.5" />
-          Back
-        </Button>
         <h1 className="text-xl font-semibold flex items-center gap-2">
           <Globe2 className="h-5 w-5 text-muted-foreground" />
           Settings

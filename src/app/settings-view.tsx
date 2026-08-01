@@ -342,46 +342,38 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
 
         {/* ---- Appearance ---- */}
         {activeSection === "appearance" && (
-          <Card className="border-dashed">
-            <CardContent className="py-12 text-center text-muted-foreground">
-              <Palette className="h-8 w-8 mx-auto mb-3 opacity-40" />
-              <p className="text-sm font-medium mb-1">Coming Soon</p>
-              <p className="text-xs">Theme, font size, and density options will be available here.</p>
-            </CardContent>
-          </Card>
+          <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
+            <Palette className="h-8 w-8 mb-3 opacity-30" />
+            <p className="text-sm font-medium mb-1">Coming Soon</p>
+            <p className="text-xs">Theme, font size, and density options will be available here.</p>
+          </div>
         )}
 
         {/* ---- Notifications ---- */}
         {activeSection === "notifications" && (
-          <Card className="border-dashed">
-            <CardContent className="py-12 text-center text-muted-foreground">
-              <Bell className="h-8 w-8 mx-auto mb-3 opacity-40" />
-              <p className="text-sm font-medium mb-1">Coming Soon</p>
-              <p className="text-xs">Configure scan completion, breach alert, and system notifications.</p>
-            </CardContent>
-          </Card>
+          <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
+            <Bell className="h-8 w-8 mb-3 opacity-30" />
+            <p className="text-sm font-medium mb-1">Coming Soon</p>
+            <p className="text-xs">Configure scan completion, breach alert, and system notifications.</p>
+          </div>
         )}
 
         {/* ---- Account ---- */}
         {activeSection === "account" && (
-          <Card className="border-dashed">
-            <CardContent className="py-12 text-center text-muted-foreground">
-              <User className="h-8 w-8 mx-auto mb-3 opacity-40" />
-              <p className="text-sm font-medium mb-1">Coming Soon</p>
-              <p className="text-xs">Account management, login, and subscription plans will be here.</p>
-            </CardContent>
-          </Card>
+          <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
+            <User className="h-8 w-8 mb-3 opacity-30" />
+            <p className="text-sm font-medium mb-1">Coming Soon</p>
+            <p className="text-xs">Account management, login, and subscription plans will be here.</p>
+          </div>
         )}
 
         {/* ---- Data Management ---- */}
         {activeSection === "data" && (
-          <Card className="border-dashed">
-            <CardContent className="py-12 text-center text-muted-foreground">
-              <Database className="h-8 w-8 mx-auto mb-3 opacity-40" />
-              <p className="text-sm font-medium mb-1">Coming Soon</p>
-              <p className="text-xs">Export, import, and clear cached data and search history.</p>
-            </CardContent>
-          </Card>
+          <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
+            <Database className="h-8 w-8 mb-3 opacity-30" />
+            <p className="text-sm font-medium mb-1">Coming Soon</p>
+            <p className="text-xs">Export, import, and clear cached data and search history.</p>
+          </div>
         )}
 
         {/* ---- About ---- */}

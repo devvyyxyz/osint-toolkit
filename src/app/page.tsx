@@ -803,16 +803,14 @@ function ToolSection({
       {hasData && children ? (
         children
       ) : (
-        <Card className="border-dashed border-border/60">
-          <CardContent className="py-8 text-center text-muted-foreground">
-            <AlertTriangle className="h-6 w-6 mx-auto mb-2 opacity-40" />
-            <p className="text-xs">
-              {toolName
-                ? `This section is not enabled for ${toolName}.`
-                : "Data failed to load. Run a search to populate this section."}
-            </p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+          <AlertTriangle className="h-6 w-6 mb-2 opacity-30" />
+          <p className="text-xs">
+            {toolName
+              ? `This section is not enabled for ${toolName}.`
+              : "Data failed to load. Run a search to populate this section."}
+          </p>
+        </div>
       )}
     </div>
   );
@@ -955,12 +953,12 @@ function ResultsView({
 }) {
   if (filteredResults.length === 0) {
     return (
-      <Card className="border-dashed">
-        <CardContent className="py-12 text-center text-sm text-muted-foreground">
+      <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+        <p className="text-sm">
           No results match the current filters. Adjust the status or category
           filters in the sidebar.
-        </CardContent>
-      </Card>
+        </p>
+      </div>
     );
   }
 

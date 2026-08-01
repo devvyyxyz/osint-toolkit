@@ -147,31 +147,27 @@ export function DomainScannerView({
 
       {/* Error state */}
       {error && !loading && (
-        <Card className="border-red-500/40 bg-red-500/10">
-          <CardContent className="py-8 text-center">
-            <AlertTriangle className="h-8 w-8 mx-auto mb-3 text-red-600 dark:text-red-400" />
-            <p className="text-sm font-medium text-red-700 dark:text-red-300 mb-1">
-              Scan failed
-            </p>
-            <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <AlertTriangle className="h-8 w-8 mb-3 text-red-600 dark:text-red-400 opacity-50" />
+          <p className="text-sm font-medium text-red-700 dark:text-red-300 mb-1">
+            Scan failed
+          </p>
+          <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+        </div>
       )}
 
       {/* Empty state */}
       {!loading && !result && !error && (
-        <Card className="border-dashed">
-          <CardContent className="py-16 text-center text-muted-foreground">
-            <Globe className="h-10 w-10 mx-auto mb-4 opacity-40" />
-            <p className="text-sm font-medium mb-1">No scan yet</p>
-            <p className="text-xs">
-              Enter a domain in the sidebar (e.g.{" "}
-              <span className="font-mono text-foreground">example.com</span>)
-              and press <span className="font-medium text-foreground">Scan</span>{" "}
-              to scan DNS, WHOIS, SSL, subdomains, tech stack, and security headers.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
+          <Globe className="h-10 w-10 mb-4 opacity-30" />
+          <p className="text-sm font-medium mb-1">No scan yet</p>
+          <p className="text-xs">
+            Enter a domain in the sidebar (e.g.{" "}
+            <span className="font-mono text-foreground">example.com</span>)
+            and press <span className="font-medium text-foreground">Scan</span>{" "}
+            to scan DNS, WHOIS, SSL, subdomains, tech stack, and security headers.
+          </p>
+        </div>
       )}
 
       {/* Results */}

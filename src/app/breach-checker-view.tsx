@@ -108,15 +108,13 @@ export function BreachCheckerView({
           {loading && !result && <LoadingState />}
 
           {error && !loading && (
-            <Card className="border-red-500/40 bg-red-500/10">
-              <CardContent className="py-8 text-center">
-                <AlertTriangle className="h-8 w-8 mx-auto mb-3 text-red-600 dark:text-red-400" />
-                <p className="text-sm font-medium text-red-700 dark:text-red-300 mb-1">
-                  Check failed
-                </p>
-                <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
-              </CardContent>
-            </Card>
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <AlertTriangle className="h-8 w-8 mb-3 text-red-600 dark:text-red-400 opacity-50" />
+              <p className="text-sm font-medium text-red-700 dark:text-red-300 mb-1">
+                Check failed
+              </p>
+              <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+            </div>
           )}
 
           {!loading && !result && !error && <EmptyState />}
@@ -201,21 +199,19 @@ function ModeSelector({
 
 function EmptyState() {
   return (
-    <Card className="border-dashed">
-      <CardContent className="py-16 text-center text-muted-foreground">
-        <ShieldCheck className="h-10 w-10 mx-auto mb-4 opacity-40" />
-        <p className="text-sm font-medium mb-1">No check yet</p>
-        <p className="text-xs">
-          Enter an email address or username in the sidebar and press{" "}
-          <span className="font-medium text-foreground">Check</span> to see
-          if it appears in known data breaches.
-        </p>
-        <p className="text-[11px] mt-3 text-amber-600 dark:text-amber-400">
-          Note: Account lookups require a free HIBP API key. The Password
-          Check tab works without any key.
-        </p>
-      </CardContent>
-    </Card>
+    <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
+      <ShieldCheck className="h-10 w-10 mb-4 opacity-30" />
+      <p className="text-sm font-medium mb-1">No check yet</p>
+      <p className="text-xs">
+        Enter an email address or username in the sidebar and press{" "}
+        <span className="font-medium text-foreground">Check</span> to see
+        if it appears in known data breaches.
+      </p>
+      <p className="text-[11px] mt-3 text-amber-600 dark:text-amber-400">
+        Note: Account lookups require a free HIBP API key. The Password
+        Check mode works without any key.
+      </p>
+    </div>
   );
 }
 
@@ -1038,12 +1034,10 @@ function PasswordChecker() {
       )}
 
       {result?.error && (
-        <Card className="border-red-500/40 bg-red-500/10">
-          <CardContent className="py-6 text-center">
-            <AlertTriangle className="h-6 w-6 mx-auto mb-2 text-red-600 dark:text-red-400" />
-            <p className="text-xs text-red-600 dark:text-red-400">{result.error}</p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <AlertTriangle className="h-6 w-6 mb-2 text-red-600 dark:text-red-400 opacity-50" />
+          <p className="text-xs text-red-600 dark:text-red-400">{result.error}</p>
+        </div>
       )}
 
       {/* Privacy note */}

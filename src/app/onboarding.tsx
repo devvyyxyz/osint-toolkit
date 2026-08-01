@@ -63,10 +63,10 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   const canFinish = step === STEPS.length - 1;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
-      <div className="max-w-2xl w-full">
-        {/* Progress dots */}
-        <div className="flex items-center justify-center gap-2 mb-8">
+    <div className="h-screen flex flex-col bg-background">
+      {/* Pinned top: progress dots — stays in the same place regardless of content */}
+      <div className="shrink-0 pt-8 pb-4 flex items-center justify-center">
+        <div className="flex items-center justify-center gap-2">
           {STEPS.map((s, i) => {
             const Icon = s.icon;
             const isActive = i === step;
@@ -93,6 +93,11 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             );
           })}
         </div>
+      </div>
+
+      {/* Scrollable content area */}
+      <div className="flex-1 overflow-y-auto px-4">
+        <div className="max-w-2xl w-full mx-auto pb-8">
 
           {/* Step content */}
           {step === 0 && <WelcomeStep />}
@@ -149,6 +154,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               </Button>
             )}
           </div>
+        </div>
       </div>
     </div>
   );

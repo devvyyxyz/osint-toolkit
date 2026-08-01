@@ -13,9 +13,11 @@ import {
   Globe2,
   Info,
   Settings as SettingsIcon,
+  LayoutGrid,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   SidebarInset,
   SidebarProvider,
@@ -38,6 +40,7 @@ import { LandingPage } from "./landing-page";
 import { BreachCheckerView } from "./breach-checker-view";
 import { Onboarding } from "./onboarding";
 import { SettingsView } from "./settings-view";
+import { LeftPanel, type DashboardSection } from "./left-panel";
 import { SettingsProvider, useSettings } from "./settings-context";
 import type { HitStatus } from "./hit-types";
 
@@ -113,6 +116,7 @@ function HomeContent() {
   const [view, setView] = useState<"landing" | "app">("landing");
   const [showSettings, setShowSettings] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<DashboardSection>("tools");
   const [activeTool, setActiveTool] = useState("username-finder");
   const [rawInput, setRawInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -388,16 +392,25 @@ function HomeContent() {
     );
   }
 
-  // ---- App view (sidebar + tool) ----
+  // ---- App view (left panel + sidebar + tool) ----
   return (
-    <SidebarProvider>
-      <AppSidebar
-        activeTool={activeTool}
-        onToolChange={setActiveTool}
+    <div className="flex h-screen overflow-hidden">
+      {/* Left panel — dashboard sections (Overview, Tools) */}
+      <LeftPanel
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
         onGoHome={goHome}
         onOpenSettings={() => setShowSettings(true)}
         showSettings={showSettings}
         onCloseSettings={() => setShowSettings(false)}
+      />
+
+      {/* Right side: sidebar + main content */}
+      <div className="flex-1 flex min-w-0">
+      <SidebarProvider>
+      <AppSidebar
+        activeTool={activeTool}
+        onToolChange={setActiveTool}
         rawInput={rawInput}
         onRawInputChange={setRawInput}
         onSubmit={runSearch}
@@ -466,70 +479,158 @@ function HomeContent() {
         </header>
 
         {/* Main scrollable area */}
-        <main className="flex-1 p-4 sm:p-6">
-          {/* ---- Settings view (replaces tool view when open) ---- */}
-          {showSettings ? (
+        <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
+          {/* ---- Overview section (empty) ---- */}
+          {activeSection === "overview" && !showSettings && (
+            <Card className="border-dashed">
+              <CardContent className="py-20 text-center text-muted-foreground">
+                <LayoutGrid className="h-10 w-10 mx-auto mb-4 opacity-40" />
+                <p className="text-sm font-medium mb-1">Overview</p>
+                <p className="text-xs">This section is empty for now.</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ---- Settings view ---- */}
+          {showSettings && activeSection === "tools" ? (
             <SettingsView onBack={() => setShowSettings(false)} />
-          ) : (
+          ) : activeSection === "tools" ? (
           <>
-          {/* ---- Username Finder view ---- */}
+          {/* ---- Tool views with Status/Categories/Results sections ---- */}
           {activeTool === "username-finder" && (
             <>
-              {/* Loading skeleton */}
-              {loading && !results && (
-                <LoadingState total={totalPlatforms} />
-              )}
+              {/* Status section */}
+              <ToolSection title="Status" hasData={!!results}>
+                {results ? (
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { label: "Found", count: counts.found, color: "text-emerald-600 dark:text-emerald-400" },
+                      { label: "Not Found", count: counts.not_found, color: "text-zinc-500 dark:text-zinc-400" },
+                      { label: "Unknown", count: counts.unknown, color: "text-amber-600 dark:text-amber-400" },
+                      { label: "Blocked", count: counts.blocked, color: "text-orange-600 dark:text-orange-400" },
+                      { label: "Errors", count: counts.error, color: "text-red-600 dark:text-red-400" },
+                    ].map((s) => (
+                      <Badge key={s.label} variant="secondary" className={`text-xs ${s.color}`}>
+                        {s.label}: {s.count}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : null}
+              </ToolSection>
 
-              {/* Empty hint */}
-              {!loading && !results && (
-                <Card className="border-dashed">
-                  <CardContent className="py-16 text-center text-muted-foreground">
-                    <Search className="h-10 w-10 mx-auto mb-4 opacity-40" />
-                    <p className="text-sm font-medium mb-1">No search yet</p>
-                    <p className="text-xs">
-                      Type any <span className="font-mono">@username</span> in the
-                      sidebar and press{" "}
-                      <span className="font-medium text-foreground">Search</span> to
-                      probe {totalPlatforms}+ social platforms in parallel.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+              {/* Categories section */}
+              <ToolSection title="Categories" hasData={!!results}>
+                {results ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {Array.from(new Set(PLATFORMS.map((p) => p.category))).sort().map((cat) => {
+                      const active = selectedCategories.has(cat);
+                      return (
+                        <button
+                          key={cat}
+                          onClick={() => toggleCategory(cat)}
+                          className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                            active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </ToolSection>
 
-              {/* Results grid */}
-              {results && (
-                <ResultsView
-                  results={results}
-                  filteredResults={filteredResults}
-                  loading={loading}
-                  onSelectHit={(hit) => {
-                    setSelectedHit(hit);
-                    setDialogOpen(true);
-                  }}
-                />
-              )}
+              {/* Results section */}
+              <ToolSection title="Results" hasData={!!results}>
+                {loading && !results ? (
+                  <LoadingState total={totalPlatforms} />
+                ) : results ? (
+                  <ResultsView
+                    results={results}
+                    filteredResults={filteredResults}
+                    loading={loading}
+                    onSelectHit={(hit) => {
+                      setSelectedHit(hit);
+                      setDialogOpen(true);
+                    }}
+                  />
+                ) : null}
+              </ToolSection>
             </>
           )}
 
-          {/* ---- Domain Scanner view ---- */}
+          {/* ---- Domain Scanner ---- */}
           {activeTool === "domain-scanner" && (
-            <DomainScannerView
-              result={domainResult as import("./domain-scanner-view").DomainScanResult | null}
-              loading={domainLoading}
-              error={domainError}
-            />
+            <>
+              <ToolSection title="Status" hasData={!!domainResult}>
+                {domainResult ? (
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      Scanned in {(domainResult as { durationMs: number }).durationMs}ms
+                    </Badge>
+                    {(domainResult as { cached: boolean }).cached && (
+                      <Badge variant="secondary" className="text-xs">Cached</Badge>
+                    )}
+                  </div>
+                ) : null}
+              </ToolSection>
+              <ToolSection title="Categories" hasData={false} toolName="Domain Scanner" />
+              <ToolSection title="Results" hasData={!!domainResult}>
+                {domainResult ? (
+                  <DomainScannerView
+                    result={domainResult as import("./domain-scanner-view").DomainScanResult | null}
+                    loading={domainLoading}
+                    error={domainError}
+                  />
+                ) : domainLoading ? (
+                  <DomainScannerView result={null} loading={true} error={null} />
+                ) : domainError ? (
+                  <DomainScannerView result={null} loading={false} error={domainError} />
+                ) : null}
+              </ToolSection>
+            </>
           )}
 
-          {/* ---- Breach Checker view ---- */}
+          {/* ---- Breach Checker ---- */}
           {activeTool === "breach-checker" && (
-            <BreachCheckerView
-              result={breachResult as import("./breach-checker-view").BreachCheckResult | null}
-              loading={breachLoading}
-              error={breachError}
-            />
+            <>
+              <ToolSection title="Status" hasData={!!breachResult}>
+                {breachResult ? (
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {(breachResult as { breachCount: number }).breachCount} breaches
+                    </Badge>
+                    {(breachResult as { pasteCount: number }).pasteCount > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        {(breachResult as { pasteCount: number }).pasteCount} pastes
+                      </Badge>
+                    )}
+                  </div>
+                ) : null}
+              </ToolSection>
+              <ToolSection title="Categories" hasData={false} toolName="Breach Checker" />
+              <ToolSection title="Results" hasData={!!breachResult}>
+                {breachResult ? (
+                  <BreachCheckerView
+                    result={breachResult as import("./breach-checker-view").BreachCheckResult | null}
+                    loading={breachLoading}
+                    error={breachError}
+                  />
+                ) : breachLoading ? (
+                  <BreachCheckerView result={null} loading={true} error={null} />
+                ) : breachError ? (
+                  <BreachCheckerView result={null} loading={false} error={breachError} />
+                ) : null}
+              </ToolSection>
+            </>
+          )}
+
+          {/* ---- Disabled tools ---- */}
+          {!["username-finder", "domain-scanner", "breach-checker"].includes(activeTool) && (
+            <ToolSection title="Status" hasData={false} toolName={ALL_TOOLS.find((t) => t.id === activeTool)?.name ?? "this tool"} />
           )}
           </>
-          )}
+          ) : null}
         </main>
 
         {/* Footer */}
@@ -576,7 +677,9 @@ function HomeContent() {
       />
 
       <Toaster />
-    </SidebarProvider>
+      </SidebarProvider>
+      </div>
+    </div>
   );
 }
 
@@ -780,6 +883,44 @@ function DetailsDialog({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Tool section — shows a titled section with content or an error box */
+/* ------------------------------------------------------------------ */
+
+function ToolSection({
+  title,
+  hasData,
+  toolName,
+  children,
+}: {
+  title: string;
+  hasData: boolean;
+  toolName?: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="mb-6">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+        {title}
+      </h2>
+      {hasData && children ? (
+        children
+      ) : (
+        <Card className="border-dashed border-border/60">
+          <CardContent className="py-8 text-center text-muted-foreground">
+            <AlertTriangle className="h-6 w-6 mx-auto mb-2 opacity-40" />
+            <p className="text-xs">
+              {toolName
+                ? `This section is not enabled for ${toolName}.`
+                : "Data failed to load. Run a search to populate this section."}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
 

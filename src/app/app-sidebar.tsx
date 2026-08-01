@@ -397,11 +397,6 @@ function CollapsibleSection({
 export interface AppSidebarProps {
   activeTool: string;
   onToolChange: (toolId: string) => void;
-  onGoHome: () => void;
-  onOpenSettings: () => void;
-  /** When true, the settings button becomes a "Back" button */
-  showSettings: boolean;
-  onCloseSettings: () => void;
   rawInput: string;
   onRawInputChange: (v: string) => void;
   onSubmit: () => void;
@@ -504,10 +499,6 @@ function HomeButton({ onClick }: { onClick: () => void }) {
 export function AppSidebar({
   activeTool,
   onToolChange,
-  onGoHome,
-  onOpenSettings,
-  showSettings,
-  onCloseSettings,
   rawInput,
   onRawInputChange,
   onSubmit,
@@ -555,14 +546,12 @@ export function AppSidebar({
   return (
     <Sidebar>
       <TooltipProvider delayDuration={300}>
-        {/* ---------- Header: title + controls + tools + search ---------- */}
+        {/* ---------- Header: title + search ---------- */}
         <SidebarHeader>
-          {/* Title row with home + toggle buttons on the right */}
+          {/* Title row */}
           <div className="flex items-center gap-2 px-2 py-2">
             <Globe2 className="h-4 w-4 text-muted-foreground shrink-0" />
-            <span className="font-semibold text-sm flex-1">OSINT Toolkit</span>
-            <HomeButton onClick={onGoHome} />
-            <SidebarInternalToggle />
+            <span className="font-semibold text-sm flex-1">Search</span>
           </div>
 
           {/* Tool-specific search bar — shown FIRST, above tools */}
@@ -966,23 +955,6 @@ export function AppSidebar({
         {/* ---------- Footer ---------- */}
         <SidebarFooter>
           <SidebarSeparator />
-          {/* Settings / Back button — same position, swaps label/icon */}
-          <button
-            type="button"
-            onClick={showSettings ? onCloseSettings : onOpenSettings}
-            className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs transition-colors ${
-              showSettings
-                ? "text-primary hover:bg-primary/10"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
-            }`}
-          >
-            {showSettings ? (
-              <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
-            ) : (
-              <SettingsIcon className="h-3.5 w-3.5 shrink-0" />
-            )}
-            <span>{showSettings ? "Back" : "Settings"}</span>
-          </button>
           <div className="px-3 py-2 text-[10px] text-muted-foreground space-y-1">
             <div className="flex items-center justify-between">
               <span>Platforms</span>

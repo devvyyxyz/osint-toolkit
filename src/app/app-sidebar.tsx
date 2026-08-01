@@ -13,6 +13,7 @@ import {
   Tag,
   Globe2,
   AtSign,
+  Star,
   Phone,
   Globe,
   Image as ImageIcon,
@@ -239,6 +240,9 @@ export interface AppSidebarProps {
   onBreachSubmit: () => void;
   canCheckBreach: boolean;
   breachLoading: boolean;
+  /** Set of tool IDs that are starred by the user */
+  starredTools: Set<string>;
+  onToggleStar: (toolId: string) => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -272,6 +276,8 @@ export function AppSidebar(props: AppSidebarProps) {
     onBreachSubmit,
     canCheckBreach,
     breachLoading,
+    starredTools,
+    onToggleStar,
   } = props;
 
   const categories = React.useMemo(() => {
@@ -389,8 +395,47 @@ export function AppSidebar(props: AppSidebarProps) {
 
         <div className="border-t border-border/60" />
 
-        {/* ---------- Scrollable: Tools only ---------- */}
+        {/* ---------- Scrollable: Starred + Tools ---------- */}
         <div className="flex-1 overflow-y-auto">
+          {/* Starred section — always shown, even if empty */}
+          <CollapsibleSection
+            label={`Starred (${starredTools.size})`}
+            icon={<Star className="h-3 w-3" />}
+            defaultOpen={true}
+          >
+            {starredTools.size === 0 ? (
+              <div className="px-2 py-3 text-center">
+                <Star className="h-4 w-4 mx-auto mb-1 text-muted-foreground/30" />
+                <p className="text-[10px] text-muted-foreground/60">
+                  No starred tools yet. Click the star icon on a tool to pin it here.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-0.5">
+                {ALL_TOOLS.filter((t) => starredTools.has(t.id)).map((tool) => {
+                  const ToolIcon = tool.icon;
+                  const isActive = tool.id === activeTool;
+                  return (
+                    <button
+                      key={tool.id}
+                      type="button"
+                      onClick={() => onToolChange(tool.id)}
+                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
+                        isActive
+                          ? "bg-primary text-primary-foreground font-medium"
+                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                      }`}
+                    >
+                      <ToolIcon className="h-3.5 w-3.5 shrink-0" />
+                      <span className="flex-1 text-left truncate">{tool.name}</span>
+                      <Star className="h-2.5 w-2.5 shrink-0 fill-amber-400 text-amber-400" />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </CollapsibleSection>
+
           {/* Tools section */}
           <CollapsibleSection
             label={`Tools (${ENABLED_COUNT}/${TOTAL_COUNT})`}
@@ -428,6 +473,35 @@ export function AppSidebar(props: AppSidebarProps) {
                               <ToolIcon className="h-3.5 w-3.5 shrink-0" />
                               <span className="flex-1 text-left truncate">{tool.name}</span>
                               {!tool.enabled && <Lock className="h-2.5 w-2.5 shrink-0 opacity-60" />}
+                              {tool.enabled && (
+                                <span
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onToggleStar(tool.id);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      onToggleStar(tool.id);
+                                    }
+                                  }}
+                                  className="shrink-0 cursor-pointer p-0.5 rounded hover:bg-accent/80"
+                                  aria-label={starredTools.has(tool.id) ? "Unstar tool" : "Star tool"}
+                                >
+                                  <Star
+                                    className={`h-2.5 w-2.5 transition-colors ${
+                                      starredTools.has(tool.id)
+                                        ? "fill-amber-400 text-amber-400"
+                                        : isActive
+                                          ? "text-primary-foreground/60 hover:text-primary-foreground"
+                                          : "text-muted-foreground/40 hover:text-amber-400"
+                                    }`}
+                                  />
+                                </span>
+                              )}
                               {isActive && tool.enabled && <Check className="h-3 w-3 shrink-0" />}
                             </button>
                           </TooltipTrigger>

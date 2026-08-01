@@ -115,6 +115,7 @@ function HomeContent() {
   const [activeSection, setActiveSection] = useState<DashboardSection>("tools");
   const [activeSettingsSection, setActiveSettingsSection] = useState("api-keys");
   const [activeTool, setActiveTool] = useState("username-finder");
+  const [starredTools, setStarredTools] = useState<Set<string>>(new Set());
   const [rawInput, setRawInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResponse | null>(null);
@@ -348,6 +349,15 @@ function HomeContent() {
     setSelectedCategories(new Set());
   }, []);
 
+  const toggleStar = useCallback((toolId: string) => {
+    setStarredTools((prev) => {
+      const next = new Set(prev);
+      if (next.has(toolId)) next.delete(toolId);
+      else next.add(toolId);
+      return next;
+    });
+  }, []);
+
   // Enter the app — if onboarding isn't done, show the wizard first
   const enterApp = useCallback((tool?: string) => {
     if (tool) setActiveTool(tool);
@@ -429,6 +439,8 @@ function HomeContent() {
           onBreachSubmit={runBreachCheck}
           canCheckBreach={canCheckBreach}
           breachLoading={breachLoading}
+          starredTools={starredTools}
+          onToggleStar={toggleStar}
         />
       )}
 

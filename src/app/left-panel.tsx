@@ -239,7 +239,7 @@ export function LeftPanel({
         <div className="flex-1 py-2 space-y-0.5 px-2">
           {SECTIONS.map((section) => {
             const Icon = section.icon;
-            const isActive = activeSection === section.id;
+            const isActive = activeSection === section.id && !showSettings;
             return (
               <Tooltip key={section.id}>
                 <TooltipTrigger asChild>

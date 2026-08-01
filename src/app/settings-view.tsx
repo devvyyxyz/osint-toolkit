@@ -16,6 +16,11 @@ import {
   ArrowLeft,
   Eye,
   EyeOff,
+  Palette,
+  Bell,
+  User,
+  Database,
+  Info,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -72,6 +77,11 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
           {activeSection === "caching" && "Caching"}
           {activeSection === "probing" && "Probing"}
           {activeSection === "privacy" && "Privacy"}
+          {activeSection === "appearance" && "Appearance"}
+          {activeSection === "notifications" && "Notifications"}
+          {activeSection === "account" && "Account"}
+          {activeSection === "data" && "Data Management"}
+          {activeSection === "about" && "About"}
           {activeSection === "danger" && "Danger Zone"}
         </h1>
         {saved && (
@@ -328,6 +338,89 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
             </div>
           </CardContent>
         </Card>
+        )}
+
+        {/* ---- Appearance ---- */}
+        {activeSection === "appearance" && (
+          <Card className="border-dashed">
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <Palette className="h-8 w-8 mx-auto mb-3 opacity-40" />
+              <p className="text-sm font-medium mb-1">Coming Soon</p>
+              <p className="text-xs">Theme, font size, and density options will be available here.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ---- Notifications ---- */}
+        {activeSection === "notifications" && (
+          <Card className="border-dashed">
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <Bell className="h-8 w-8 mx-auto mb-3 opacity-40" />
+              <p className="text-sm font-medium mb-1">Coming Soon</p>
+              <p className="text-xs">Configure scan completion, breach alert, and system notifications.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ---- Account ---- */}
+        {activeSection === "account" && (
+          <Card className="border-dashed">
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <User className="h-8 w-8 mx-auto mb-3 opacity-40" />
+              <p className="text-sm font-medium mb-1">Coming Soon</p>
+              <p className="text-xs">Account management, login, and subscription plans will be here.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ---- Data Management ---- */}
+        {activeSection === "data" && (
+          <Card className="border-dashed">
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <Database className="h-8 w-8 mx-auto mb-3 opacity-40" />
+              <p className="text-sm font-medium mb-1">Coming Soon</p>
+              <p className="text-xs">Export, import, and clear cached data and search history.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ---- About ---- */}
+        {activeSection === "about" && (
+          <Card>
+            <CardContent className="p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <Info className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-sm font-semibold">About OSINT Toolkit</h2>
+              </div>
+              <div className="space-y-3 text-xs">
+                <div className="flex items-center justify-between py-1.5 border-b border-border/40">
+                  <span className="text-muted-foreground">Version</span>
+                  <span className="font-mono">1.0.0</span>
+                </div>
+                <div className="flex items-center justify-between py-1.5 border-b border-border/40">
+                  <span className="text-muted-foreground">Platforms tracked</span>
+                  <span className="font-mono">102</span>
+                </div>
+                <div className="flex items-center justify-between py-1.5 border-b border-border/40">
+                  <span className="text-muted-foreground">Default cache TTL</span>
+                  <span className="font-mono">5 minutes</span>
+                </div>
+                <div className="flex items-center justify-between py-1.5 border-b border-border/40">
+                  <span className="text-muted-foreground">APIs used</span>
+                  <span className="font-mono">HIBP, GitHub, Reddit, Mastodon, RDAP, DNS</span>
+                </div>
+                <div className="flex items-center justify-between py-1.5">
+                  <span className="text-muted-foreground">License</span>
+                  <span className="font-mono">Self-hosted</span>
+                </div>
+              </div>
+              <div className="rounded-md border border-blue-500/30 bg-blue-500/5 p-3 text-[11px] text-muted-foreground">
+                OSINT Toolkit is a self-hosted intelligence platform for
+                searching usernames, scanning domains, and checking data
+                breaches. All data is stored locally in your browser.
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
 

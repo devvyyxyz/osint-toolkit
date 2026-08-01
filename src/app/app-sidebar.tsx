@@ -264,7 +264,6 @@ export function AppSidebar(props: AppSidebarProps) {
     onToggleCategory,
     onClearCategories,
     counts,
-    totalPlatforms,
     hasResults,
     domainInput,
     onDomainInputChange,
@@ -693,18 +692,6 @@ export function AppSidebar(props: AppSidebarProps) {
               )}
             </div>
           </CollapsibleSection>
-        </div>
-
-        {/* ---------- Footer ---------- */}
-        <div className="shrink-0 border-t border-border/60 px-3 py-2 text-[10px] text-muted-foreground space-y-1">
-          <div className="flex items-center justify-between">
-            <span>Platforms</span>
-            <span className="font-mono">{totalPlatforms}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Cache</span>
-            <span className="font-mono">5 min TTL</span>
-          </div>
         </div>
       </TooltipProvider>
     </div>

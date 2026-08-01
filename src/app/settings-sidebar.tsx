@@ -8,14 +8,14 @@ import {
   Zap,
   Lock,
   AlertTriangle,
-  ChevronDown,
   Check,
+  Palette,
+  Bell,
+  User,
+  Database,
+  Info,
+  Globe,
 } from "lucide-react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 interface SettingsSidebarProps {
   /** Currently active settings section */
@@ -28,6 +28,11 @@ const SETTINGS_SECTIONS = [
   { id: "caching", label: "Caching", icon: Clock },
   { id: "probing", label: "Probing", icon: Zap },
   { id: "privacy", label: "Privacy", icon: Lock },
+  { id: "appearance", label: "Appearance", icon: Palette },
+  { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "account", label: "Account", icon: User },
+  { id: "data", label: "Data Management", icon: Database },
+  { id: "about", label: "About", icon: Info },
   { id: "danger", label: "Danger Zone", icon: AlertTriangle },
 ];
 

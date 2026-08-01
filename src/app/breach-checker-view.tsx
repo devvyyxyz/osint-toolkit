@@ -19,18 +19,14 @@ import {
   CheckCircle2,
   XCircle,
   Lightbulb,
+  ChevronDown,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -95,27 +91,23 @@ export function BreachCheckerView({
   result,
   loading,
   error,
+  mode,
+  onModeChange,
 }: {
   result: BreachCheckResult | null;
   loading: boolean;
   error: string | null;
+  mode: "account" | "password";
+  onModeChange: (m: "account" | "password") => void;
 }) {
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="account" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="account" className="text-xs">
-            <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />
-            Account Check
-          </TabsTrigger>
-          <TabsTrigger value="password" className="text-xs">
-            <Key className="h-3.5 w-3.5 mr-1.5" />
-            Password Check
-          </TabsTrigger>
-        </TabsList>
+      {/* Mode selector dropdown */}
+      <ModeSelector mode={mode} onModeChange={onModeChange} />
 
-        {/* ---- Account breach check tab ---- */}
-        <TabsContent value="account" className="space-y-4 mt-4">
+      {/* ---- Account breach check ---- */}
+      {mode === "account" && (
+        <>
           {loading && !result && <LoadingState />}
 
           {error && !loading && (
@@ -133,13 +125,75 @@ export function BreachCheckerView({
           {!loading && !result && !error && <EmptyState />}
 
           {result && !loading && <AccountResults result={result} />}
-        </TabsContent>
+        </>
+      )}
 
-        {/* ---- Password check tab ---- */}
-        <TabsContent value="password" className="mt-4">
-          <PasswordChecker />
-        </TabsContent>
-      </Tabs>
+      {/* ---- Password check ---- */}
+      {mode === "password" && <PasswordChecker />}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Mode selector — dropdown to switch between Account and Password    */
+/* ------------------------------------------------------------------ */
+
+function ModeSelector({
+  mode,
+  onModeChange,
+}: {
+  mode: "account" | "password";
+  onModeChange: (m: "account" | "password") => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const modes = [
+    { id: "account" as const, label: "Account Check", icon: ShieldCheck, desc: "Check if an email or username appears in breaches" },
+    { id: "password" as const, label: "Password Check", icon: Key, desc: "Check if a password has been exposed (free, no key needed)" },
+  ];
+  const current = modes.find((m) => m.id === mode)!;
+
+  return (
+    <div className="relative max-w-md">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-md border border-border/60 bg-background text-sm hover:bg-accent/50 transition-colors"
+      >
+        <span className="flex items-center gap-2">
+          <current.icon className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">{current.label}</span>
+        </span>
+        <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-background border border-border/60 rounded-md shadow-lg py-1">
+            {modes.map((m) => {
+              const Icon = m.icon;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => {
+                    onModeChange(m.id);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-3 py-2 hover:bg-accent transition-colors",
+                    m.id === mode && "bg-accent/50",
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs font-medium">{m.label}</span>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5 ml-6">{m.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }

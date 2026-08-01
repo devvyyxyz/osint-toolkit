@@ -137,6 +137,7 @@ function HomeContent() {
   const [breachLoading, setBreachLoading] = useState(false);
   const [breachResult, setBreachResult] = useState<unknown>(null);
   const [breachError, setBreachError] = useState<string | null>(null);
+  const [breachMode, setBreachMode] = useState<"account" | "password">("account");
 
   const { toast } = useToast();
   const abortRef = useRef<AbortController | null>(null);
@@ -538,6 +539,8 @@ function HomeContent() {
                   result={breachResult as import("./breach-checker-view").BreachCheckResult | null}
                   loading={breachLoading}
                   error={breachError}
+                  mode={breachMode}
+                  onModeChange={setBreachMode}
                 />
               )}
               {!["username-finder", "domain-scanner", "breach-checker"].includes(activeTool) && (

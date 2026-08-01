@@ -1,5 +1,5 @@
 ###############################################################################
-# Username Finder — docker-compose.yml
+# OSINT Toolkit — docker-compose.yml
 #
 # Drop this file (plus Dockerfile) into a folder on your UGNAS, then in the
 # UGNAS Docker GUI: Compose → New → select this file → Deploy.
@@ -11,7 +11,7 @@
 ###############################################################################
 
 services:
-  username-finder:
+  osint-toolkit:
     # --- Image source ---
     # Option A: build locally from the Dockerfile (default — works offline
     # after first build, no registry needed).
@@ -20,10 +20,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    # image: ghcr.io/your-username/username-finder:latest
+    # image: ghcr.io/your-username/osint-toolkit:latest
 
     # --- Container identity ---
-    container_name: username-finder
+    container_name: osint-toolkit
     restart: unless-stopped
 
     # --- Networking ---
@@ -39,6 +39,9 @@ services:
     environment:
       - NODE_ENV=production
       # - PORT=3000
+      # Optional: HIBP API key for breach checker account lookups.
+      # If not set here, users can enter it in the app's Settings.
+      # - HIBP_API_KEY=your-key-here
       # Optional: if you want to allow cross-origin requests from a specific
       # domain, set it here. Not needed for local NAS use.
       # - ALLOWED_ORIGIN=https://your-domain.example
@@ -54,13 +57,13 @@ services:
 
     # --- Labels (optional, for UGNAS dashboard display) ---
     labels:
-      - "org.opencontainers.image.title=Username Finder"
-      - "org.opencontainers.image.description=Search @usernames across 100+ social platforms"
-      - "org.opencontainers.image.source=https://github.com/username-finder"
+      - "org.opencontainers.image.title=OSINT Toolkit"
+      - "org.opencontainers.image.description=Search usernames, scan domains, check breaches across 100+ platforms"
+      - "org.opencontainers.image.source=https://github.com/osint-toolkit"
       # Traefik labels (uncomment if you use Traefik as a reverse proxy on UGNAS)
       # - "traefik.enable=true"
-      # - "traefik.http.routers.username-finder.rule=Host(`usernames.nas.local`)"
-      # - "traefik.http.services.username-finder.loadbalancer.server.port=3000"
+      # - "traefik.http.routers.osint-toolkit.rule=Host(`osint.nas.local`)"
+      # - "traefik.http.services.osint-toolkit.loadbalancer.server.port=3000"
 
     # --- Security ---
     # Drops all Linux capabilities and locks the container down.

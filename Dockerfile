@@ -1,16 +1,16 @@
 # syntax=docker/dockerfile:1.7
 
 ###############################################################################
-# Username Finder — Dockerfile
+# OSINT Toolkit — Dockerfile
 #
-# Multi-stage build producing a small runtime image (~150 MB) using Next.js
-# standalone output. Runs as a non-root user. No database required.
+# Multi-stage build producing a small runtime image using Next.js standalone
+# output. Runs as a non-root user. No database required.
 #
 # Build:
-#   docker build -t username-finder:latest .
+#   docker build -t osint-toolkit:latest .
 #
 # Run:
-#   docker run -p 3000:3000 username-finder:latest
+#   docker run -p 3000:3000 osint-toolkit:latest
 #
 # The image is designed to work on UGNAS Docker GUI — see docker-compose.yml
 # and DEPLOY.md for NAS-specific instructions.
@@ -22,6 +22,10 @@ FROM node:20-slim AS deps
 
 WORKDIR /app
 
+# Install OpenSSL — required by Prisma to detect the correct libssl version.
+# Without this, Prisma warns and may fail at runtime.
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
 # Bun is used by the project's build script; install it globally.
 RUN npm install -g bun@1.3
 
@@ -29,9 +33,6 @@ RUN npm install -g bun@1.3
 COPY package.json bun.lock* ./
 
 # Install with Bun (matches the local dev workflow).
-# Note: we don't use --frozen-lockfile so the build doesn't hard-fail if
-# the lockfile is slightly out of sync. For reproducible builds, run
-# `bun install` locally and commit the updated bun.lock before building.
 RUN bun install
 
 # ---- Stage 2: build --------------------------------------------------------
@@ -39,6 +40,9 @@ RUN bun install
 FROM node:20-slim AS builder
 
 WORKDIR /app
+
+# Install OpenSSL here too — Prisma generate runs in this stage.
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g bun@1.3
 
@@ -66,16 +70,22 @@ FROM node:20-slim AS runner
 
 WORKDIR /app
 
-# Hardened runtime: non-root user, no core dumps, prod node env.
+# Install OpenSSL in the runtime image too — Prisma's generated client
+# may need it at runtime even though we don't actively query the DB.
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
+# Hardened runtime: non-root user, prod node env.
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
     HOSTNAME=0.0.0.0 \
     NODE_OPTIONS="--disable-proto=delete"
 
-# Create a non-root user (UID 1001 — standard for Node images).
-RUN groupadd --system --gid 1001 nodejs && \
-    useradd --system --uid 1001 --gid nodejs nextjs
+# Create a non-root user using a regular (non-system) useradd call.
+# Using --system with UID > 999 triggers a warning on some Linux distros
+# where SYS_UID_MAX is 999. Using a regular user avoids this.
+RUN groupadd --gid 1001 nodejs && \
+    useradd --uid 1001 --gid nodejs --create-home --shell /bin/sh nextjs
 
 # Copy the standalone server, static assets, and public folder.
 # The standalone bundle includes a minimal node_modules — no need to install

@@ -466,8 +466,17 @@ export function ProfileDialog({
             </div>
           )}
 
-          {/* Meta grid */}
-          {!loading && data && (
+          {/* Meta grid — skeleton while loading, real data when ready */}
+          {loading ? (
+            <div className="grid grid-cols-2 gap-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="space-y-1">
+                  <Skeleton className="h-2 w-16" />
+                  <Skeleton className="h-3 w-full" />
+                </div>
+              ))}
+            </div>
+          ) : data ? (
             <div className="grid grid-cols-2 gap-2 text-xs">
               <MetaItem
                 icon={<Link2 className="h-3.5 w-3.5" />}
@@ -535,7 +544,7 @@ export function ProfileDialog({
                 />
               )}
             </div>
-          )}
+          ) : null}
 
           {/* Response headers (collapsible) */}
           {!loading && data && Object.keys(data.headers).length > 0 && (
@@ -566,8 +575,15 @@ export function ProfileDialog({
             </details>
           )}
 
-          {/* References */}
-          {!loading && data && data.references.length > 0 && (
+          {/* References — skeleton while loading, list when ready */}
+          {loading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-24" />
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-8 w-full" />
+              ))}
+            </div>
+          ) : data && data.references.length > 0 ? (
             <div>
               <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
                 <Link2 className="h-3.5 w-3.5" />
@@ -588,7 +604,7 @@ export function ProfileDialog({
                 ))}
               </div>
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* ---------- Footer ---------- */}

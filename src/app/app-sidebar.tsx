@@ -20,6 +20,10 @@ import {
   ShieldCheck,
   Share2,
   Lock,
+  ChevronDown,
+  ChevronRight,
+  PanelLeftClose,
+  Home,
 } from "lucide-react";
 import {
   Sidebar,
@@ -31,6 +35,7 @@ import {
   SidebarHeader,
   SidebarInput,
   SidebarSeparator,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +45,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { BrandIcon } from "@/components/brand-icon";
 import { PLATFORMS } from "@/lib/platforms";
 import type { HitStatus } from "./hit-types";
@@ -47,9 +57,7 @@ import type { HitStatus } from "./hit-types";
 export type StatusFilter = "all" | HitStatus;
 
 /* ------------------------------------------------------------------ */
-/*  Tool registry — defines all tools shown in the sidebar.           */
-/*  Only the `enabled: true` tool is clickable; the rest are          */
-/*  disabled "coming soon" placeholders.                              */
+/*  Tool registry                                                      */
 /* ------------------------------------------------------------------ */
 
 interface ToolDef {
@@ -119,28 +127,69 @@ const TOOLS: ToolDef[] = [
   },
 ];
 
+/* ------------------------------------------------------------------ */
+/*  Collapsible section wrapper                                        */
+/*  Wraps a sidebar group in a Collapsible so users can hide/show      */
+/*  each section. The label row is the trigger.                        */
+/* ------------------------------------------------------------------ */
+
+function CollapsibleSection({
+  label,
+  icon,
+  defaultOpen = true,
+  badge,
+  children,
+}: {
+  label: string;
+  icon?: React.ReactNode;
+  defaultOpen?: boolean;
+  badge?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = React.useState(defaultOpen);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="group/section">
+      <SidebarGroup>
+        <CollapsibleTrigger asChild>
+          <SidebarGroupLabel className="flex items-center justify-between cursor-pointer select-none hover:bg-accent/50 transition-colors text-[10px] uppercase tracking-wider text-muted-foreground py-1.5">
+            <span className="flex items-center gap-1.5">
+              {icon}
+              {label}
+            </span>
+            <span className="flex items-center gap-1">
+              {badge}
+              <ChevronDown className="h-3 w-3 transition-transform group-data-[state=open]/section:rotate-180" />
+            </span>
+          </SidebarGroupLabel>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarGroupContent>
+            {children}
+          </SidebarGroupContent>
+        </CollapsibleContent>
+      </SidebarGroup>
+    </Collapsible>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Props                                                              */
+/* ------------------------------------------------------------------ */
+
 export interface AppSidebarProps {
-  /** Which tool is currently active. */
   activeTool: string;
   onToolChange: (toolId: string) => void;
-
-  /** Username Finder props (only used when activeTool === "username-finder"). */
+  onGoHome: () => void;
   rawInput: string;
   onRawInputChange: (v: string) => void;
   onSubmit: () => void;
   canSearch: boolean;
   loading: boolean;
-
-  /** Status filter state. */
   statusFilter: StatusFilter;
   onStatusFilterChange: (f: StatusFilter) => void;
-
-  /** Category filter state (multi-select). */
   selectedCategories: Set<string>;
   onToggleCategory: (cat: string) => void;
   onClearCategories: () => void;
-
-  /** Counts for badges. */
   counts: {
     all: number;
     found: number;
@@ -149,14 +198,8 @@ export interface AppSidebarProps {
     blocked: number;
     error: number;
   };
-
-  /** Total platforms available (for the footer count). */
   totalPlatforms: number;
-
-  /** Whether results are loaded — hides filter groups until a search has run. */
   hasResults: boolean;
-
-  /** Domain Scanner props (only used when activeTool === "domain-scanner"). */
   domainInput: string;
   onDomainInputChange: (v: string) => void;
   onDomainSubmit: () => void;
@@ -178,9 +221,61 @@ const STATUS_ITEMS: {
   { value: "error", label: "Errors", icon: AlertTriangle, color: "text-red-600 dark:text-red-400" },
 ];
 
+/* ------------------------------------------------------------------ */
+/*  Sidebar with internal trigger                                      */
+/* ------------------------------------------------------------------ */
+
+function SidebarInternalToggle() {
+  const { toggleSidebar, open } = useSidebar();
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSidebar}
+          className="h-7 w-7 shrink-0"
+          aria-label={open ? "Close sidebar" : "Open sidebar"}
+        >
+          <PanelLeftClose className="h-4 w-4" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="right" className="text-xs">
+        {open ? "Close sidebar" : "Open sidebar"}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function HomeButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClick}
+          className="h-7 w-7 shrink-0"
+          aria-label="Back to home"
+        >
+          <Home className="h-4 w-4" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="right" className="text-xs">
+        Back to home
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Main component                                                     */
+/* ------------------------------------------------------------------ */
+
 export function AppSidebar({
   activeTool,
   onToolChange,
+  onGoHome,
   rawInput,
   onRawInputChange,
   onSubmit,
@@ -209,21 +304,23 @@ export function AppSidebar({
   return (
     <Sidebar>
       <TooltipProvider delayDuration={300}>
-        {/* ---------- Header: tools + search bar ---------- */}
+        {/* ---------- Header: title + controls + tools + search ---------- */}
         <SidebarHeader>
-          {/* App title */}
+          {/* Title row with home + toggle buttons on the right */}
           <div className="flex items-center gap-2 px-2 py-2">
             <Globe2 className="h-4 w-4 text-muted-foreground shrink-0" />
-            <span className="font-semibold text-sm">OSINT Toolkit</span>
+            <span className="font-semibold text-sm flex-1">OSINT Toolkit</span>
+            <HomeButton onClick={onGoHome} />
+            <SidebarInternalToggle />
           </div>
 
-          {/* Tools selector — enabled tools are clickable and switch the
-              active view; disabled ones show a "coming soon" tooltip. */}
-          <div className="px-2 pb-1">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground px-1 mb-1">
-              Tools
-            </div>
-            <div className="space-y-0.5">
+          {/* Tools selector — collapsible */}
+          <CollapsibleSection
+            label="Tools"
+            icon={<Filter className="h-3 w-3" />}
+            defaultOpen={true}
+          >
+            <div className="space-y-0.5 px-1">
               {TOOLS.map((tool) => {
                 const ToolIcon = tool.icon;
                 const isActive = tool.id === activeTool;
@@ -275,11 +372,11 @@ export function AppSidebar({
                 );
               })}
             </div>
-          </div>
+          </CollapsibleSection>
 
           <SidebarSeparator className="my-1" />
 
-          {/* ---- Tool-specific search bar ---- */}
+          {/* Tool-specific search bar */}
           {activeTool === "username-finder" && (
             <form
               onSubmit={(e) => {
@@ -363,19 +460,19 @@ export function AppSidebar({
               </Button>
             </form>
           )}
-      </SidebarHeader>
+        </SidebarHeader>
 
-      <SidebarSeparator />
+        <SidebarSeparator />
 
-      {/* ---------- Content: filters ---------- */}
-      <SidebarContent>
-        {/* Status filter group — Username Finder only */}
-        {activeTool === "username-finder" && hasResults && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Status
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
+        {/* ---------- Content: collapsible filter sections ---------- */}
+        <SidebarContent>
+          {/* Status filter — Username Finder only */}
+          {activeTool === "username-finder" && hasResults && (
+            <CollapsibleSection
+              label="Status"
+              icon={<Filter className="h-3 w-3" />}
+              defaultOpen={true}
+            >
               <div className="space-y-0.5 px-1">
                 {STATUS_ITEMS.map((item) => {
                   const Icon = item.icon;
@@ -404,29 +501,30 @@ export function AppSidebar({
                   );
                 })}
               </div>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+            </CollapsibleSection>
+          )}
 
-        {/* Category filter group — Username Finder only */}
-        {activeTool === "username-finder" && hasResults && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <Tag className="h-3 w-3" />
-                Categories
-              </span>
-              {selectedCategories.size > 0 && (
-                <button
-                  type="button"
-                  onClick={onClearCategories}
-                  className="text-[10px] normal-case tracking-normal text-primary hover:underline"
-                >
-                  clear
-                </button>
-              )}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
+          {/* Category filter — Username Finder only */}
+          {activeTool === "username-finder" && hasResults && (
+            <CollapsibleSection
+              label="Categories"
+              icon={<Tag className="h-3 w-3" />}
+              defaultOpen={false}
+              badge={
+                selectedCategories.size > 0 ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onClearCategories();
+                    }}
+                    className="text-[10px] normal-case tracking-normal text-primary hover:underline"
+                  >
+                    clear
+                  </button>
+                ) : undefined
+              }
+            >
               <div className="space-y-0.5 px-1 max-h-[40vh] overflow-y-auto">
                 {categories.map((cat) => {
                   const active = selectedCategories.has(cat);
@@ -461,46 +559,43 @@ export function AppSidebar({
                   );
                 })}
               </div>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+            </CollapsibleSection>
+          )}
 
-        {/* Legend / status color key — Username Finder only */}
-        {activeTool === "username-finder" && (
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Legend
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <div className="px-2 space-y-1">
-              {[
-                { label: "Found", color: "bg-emerald-500", desc: "Profile page loaded" },
-                { label: "Not Found", color: "bg-zinc-400", desc: "404 or no-account page" },
-                { label: "Unknown", color: "bg-amber-500", desc: "Inconclusive response" },
-                { label: "Blocked", color: "bg-orange-500", desc: "403/429 challenge" },
-                { label: "Error", color: "bg-red-500", desc: "Network failure" },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="flex items-center gap-2 text-[11px] text-muted-foreground"
-                >
-                  <span className={`h-2 w-2 rounded-full shrink-0 ${item.color}`} />
-                  <span className="font-medium text-foreground">{item.label}</span>
-                  <span className="text-muted-foreground/70 truncate">— {item.desc}</span>
-                </div>
-              ))}
-            </div>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        )}
+          {/* Legend — Username Finder only, collapsible */}
+          {activeTool === "username-finder" && (
+            <CollapsibleSection
+              label="Legend"
+              defaultOpen={false}
+            >
+              <div className="px-2 space-y-1">
+                {[
+                  { label: "Found", color: "bg-emerald-500", desc: "Profile page loaded" },
+                  { label: "Not Found", color: "bg-zinc-400", desc: "404 or no-account page" },
+                  { label: "Unknown", color: "bg-amber-500", desc: "Inconclusive response" },
+                  { label: "Blocked", color: "bg-orange-500", desc: "403/429 challenge" },
+                  { label: "Error", color: "bg-red-500", desc: "Network failure" },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-center gap-2 text-[11px] text-muted-foreground"
+                  >
+                    <span className={`h-2 w-2 rounded-full shrink-0 ${item.color}`} />
+                    <span className="font-medium text-foreground">{item.label}</span>
+                    <span className="text-muted-foreground/70 truncate">— {item.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </CollapsibleSection>
+          )}
 
-        {/* Domain Scanner info — shown when domain-scanner is active */}
-        {activeTool === "domain-scanner" && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Scan includes
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
+          {/* Domain Scanner info — collapsible */}
+          {activeTool === "domain-scanner" && (
+            <CollapsibleSection
+              label="Scan includes"
+              icon={<Check className="h-3 w-3" />}
+              defaultOpen={false}
+            >
               <div className="px-2 space-y-1 text-[11px] text-muted-foreground">
                 {[
                   "DNS records (A, AAAA, MX, NS, TXT, CAA, SOA)",
@@ -518,25 +613,24 @@ export function AppSidebar({
                   </div>
                 ))}
               </div>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-      </SidebarContent>
+            </CollapsibleSection>
+          )}
+        </SidebarContent>
 
-      {/* ---------- Footer: platform count ---------- */}
-      <SidebarFooter>
-        <SidebarSeparator />
-        <div className="px-3 py-2 text-[10px] text-muted-foreground space-y-1">
-          <div className="flex items-center justify-between">
-            <span>Platforms</span>
-            <span className="font-mono">{totalPlatforms}</span>
+        {/* ---------- Footer ---------- */}
+        <SidebarFooter>
+          <SidebarSeparator />
+          <div className="px-3 py-2 text-[10px] text-muted-foreground space-y-1">
+            <div className="flex items-center justify-between">
+              <span>Platforms</span>
+              <span className="font-mono">{totalPlatforms}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Cache</span>
+              <span className="font-mono">5 min TTL</span>
+            </div>
           </div>
-          <div className="flex items-center justify-between">
-            <span>Cache</span>
-            <span className="font-mono">5 min TTL</span>
-          </div>
-        </div>
-      </SidebarFooter>
+        </SidebarFooter>
       </TooltipProvider>
     </Sidebar>
   );

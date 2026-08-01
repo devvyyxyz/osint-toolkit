@@ -11,15 +11,12 @@ import {
   Loader2,
   ShieldAlert,
   Globe2,
-  PanelLeft,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   SidebarInset,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { PLATFORMS } from "@/lib/platforms";
@@ -27,6 +24,7 @@ import { BrandIcon, brandColor } from "@/components/brand-icon";
 import { ProfileDialog } from "./profile-dialog";
 import { AppSidebar, type StatusFilter } from "./app-sidebar";
 import { DomainScannerView } from "./domain-scanner-view";
+import { LandingPage } from "./landing-page";
 import type { HitStatus } from "./hit-types";
 
 interface Hit {
@@ -88,6 +86,8 @@ const STATUS_META: Record<
 };
 
 export default function Home() {
+  // "landing" = the hero/landing page; "app" = the sidebar + tool view
+  const [view, setView] = useState<"landing" | "app">("landing");
   const [activeTool, setActiveTool] = useState("username-finder");
   const [rawInput, setRawInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -268,11 +268,34 @@ export default function Home() {
     setSelectedCategories(new Set());
   }, []);
 
+  // Enter the app from the landing page, optionally with a specific tool
+  const enterApp = useCallback((tool?: string) => {
+    if (tool) setActiveTool(tool);
+    setView("app");
+  }, []);
+
+  // Go back to the landing page
+  const goHome = useCallback(() => {
+    setView("landing");
+  }, []);
+
+  // ---- Landing page view ----
+  if (view === "landing") {
+    return (
+      <>
+        <LandingPage onEnter={enterApp} totalPlatforms={totalPlatforms} />
+        <Toaster />
+      </>
+    );
+  }
+
+  // ---- App view (sidebar + tool) ----
   return (
     <SidebarProvider>
       <AppSidebar
         activeTool={activeTool}
         onToolChange={setActiveTool}
+        onGoHome={goHome}
         rawInput={rawInput}
         onRawInputChange={setRawInput}
         onSubmit={runSearch}
@@ -295,12 +318,8 @@ export default function Home() {
 
       {/* ---------- Main content area ---------- */}
       <SidebarInset>
-        {/* Top bar: trigger + title */}
+        {/* Top bar: title + summary (sidebar toggle is now inside the sidebar) */}
         <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b border-border/60 bg-background/95 backdrop-blur px-4">
-          <SidebarTrigger>
-            <PanelLeft className="h-4 w-4" />
-          </SidebarTrigger>
-          <Separator orientation="vertical" className="h-5" />
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <Globe2 className="h-4 w-4 text-muted-foreground shrink-0" />
             <h1 className="text-sm font-semibold truncate">

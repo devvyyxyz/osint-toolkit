@@ -528,7 +528,8 @@ export function AppSidebar(props: AppSidebarProps) {
                       const ToolIcon = tool.icon;
                       const isActive = tool.id === activeTool;
                       return (
-                        <Tooltip key={tool.id}>
+                        <React.Fragment key={tool.id}>
+                        <Tooltip>
                           <TooltipTrigger asChild>
                             <button
                               type="button"
@@ -587,37 +588,38 @@ export function AppSidebar(props: AppSidebarProps) {
                             )}
                           </TooltipContent>
                         </Tooltip>
+
+                        {/* Breach Checker mode sub-items — directly below the tool */}
+                        {tool.id === "breach-checker" && activeTool === "breach-checker" && (
+                          <div className="ml-4 mt-0.5 mb-0.5 space-y-0.5 border-l border-border/40 pl-2">
+                            <button
+                              onClick={() => onBreachModeChange("account")}
+                              className={`w-full flex items-center gap-2 px-2 py-1 rounded-md text-[11px] transition-colors ${
+                                breachMode === "account"
+                                  ? "bg-accent text-accent-foreground font-medium"
+                                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                              }`}
+                            >
+                              <ShieldCheck className="h-3 w-3 shrink-0" />
+                              <span>Account Check</span>
+                            </button>
+                            <button
+                              onClick={() => onBreachModeChange("password")}
+                              className={`w-full flex items-center gap-2 px-2 py-1 rounded-md text-[11px] transition-colors ${
+                                breachMode === "password"
+                                  ? "bg-accent text-accent-foreground font-medium"
+                                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                              }`}
+                            >
+                              <Key className="h-3 w-3 shrink-0" />
+                              <span>Password Check</span>
+                            </button>
+                          </div>
+                        )}
+                        </React.Fragment>
                       );
                     })}
-                  </div>
-
-                  {/* Breach Checker mode sub-items — shown when breach-checker is active */}
-                  {activeTool === "breach-checker" && group.label === "Security" && (
-                    <div className="ml-4 mt-0.5 mb-1 space-y-0.5 border-l border-border/40 pl-2">
-                      <button
-                        onClick={() => onBreachModeChange("account")}
-                        className={`w-full flex items-center gap-2 px-2 py-1 rounded-md text-[11px] transition-colors ${
-                          breachMode === "account"
-                            ? "bg-accent text-accent-foreground font-medium"
-                            : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                        }`}
-                      >
-                        <ShieldCheck className="h-3 w-3 shrink-0" />
-                        <span>Account Check</span>
-                      </button>
-                      <button
-                        onClick={() => onBreachModeChange("password")}
-                        className={`w-full flex items-center gap-2 px-2 py-1 rounded-md text-[11px] transition-colors ${
-                          breachMode === "password"
-                            ? "bg-accent text-accent-foreground font-medium"
-                            : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                        }`}
-                      >
-                        <Key className="h-3 w-3 shrink-0" />
-                        <span>Password Check</span>
-                      </button>
-                    </div>
-                  )}
+                </div>
                 </div>
               ))}
             </div>

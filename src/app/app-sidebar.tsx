@@ -114,9 +114,9 @@ const TOOLS: ToolDef[] = [
   {
     id: "breach-checker",
     name: "Breach Checker",
-    description: "Check if an email or username appears in known breaches",
+    description: "Check if an email or username appears in known data breaches",
     icon: ShieldCheck,
-    enabled: false,
+    enabled: true,
   },
   {
     id: "social-graph",
@@ -205,6 +205,13 @@ export interface AppSidebarProps {
   onDomainSubmit: () => void;
   canScanDomain: boolean;
   domainLoading: boolean;
+
+  /** Breach Checker props (only used when activeTool === "breach-checker"). */
+  breachInput: string;
+  onBreachInputChange: (v: string) => void;
+  onBreachSubmit: () => void;
+  canCheckBreach: boolean;
+  breachLoading: boolean;
 }
 
 const STATUS_ITEMS: {
@@ -294,12 +301,31 @@ export function AppSidebar({
   onDomainSubmit,
   canScanDomain,
   domainLoading,
+  breachInput,
+  onBreachInputChange,
+  onBreachSubmit,
+  canCheckBreach,
+  breachLoading,
 }: AppSidebarProps) {
   const categories = React.useMemo(() => {
     const set = new Set<string>();
     PLATFORMS.forEach((p) => set.add(p.category));
     return Array.from(set).sort();
   }, []);
+
+  // Access the mobile sidebar state so we can auto-close it on mobile
+  // when a tool is selected or a search is submitted.
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const handleToolChange = (toolId: string) => {
+    onToolChange(toolId);
+    if (isMobile) setOpenMobile(false);
+  };
+
+  const handleSubmitAndClose = (submitFn: () => void) => {
+    submitFn();
+    if (isMobile) setOpenMobile(false);
+  };
 
   return (
     <Sidebar>
@@ -314,74 +340,12 @@ export function AppSidebar({
             <SidebarInternalToggle />
           </div>
 
-          {/* Tools selector — collapsible */}
-          <CollapsibleSection
-            label="Tools"
-            icon={<Filter className="h-3 w-3" />}
-            defaultOpen={true}
-          >
-            <div className="space-y-0.5 px-1">
-              {TOOLS.map((tool) => {
-                const ToolIcon = tool.icon;
-                const isActive = tool.id === activeTool;
-                return (
-                  <Tooltip key={tool.id}>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        disabled={!tool.enabled}
-                        onClick={() => {
-                          if (tool.enabled) onToolChange(tool.id);
-                        }}
-                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
-                          isActive && tool.enabled
-                            ? "bg-primary text-primary-foreground font-medium"
-                            : tool.enabled
-                              ? "text-muted-foreground hover:bg-accent hover:text-foreground"
-                              : "text-muted-foreground/40 cursor-not-allowed"
-                        }`}
-                        aria-disabled={!tool.enabled}
-                      >
-                        <ToolIcon className="h-3.5 w-3.5 shrink-0" />
-                        <span className="flex-1 text-left truncate">
-                          {tool.name}
-                        </span>
-                        {!tool.enabled && (
-                          <Lock className="h-2.5 w-2.5 shrink-0 opacity-60" />
-                        )}
-                        {isActive && tool.enabled && (
-                          <Check className="h-3 w-3 shrink-0" />
-                        )}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="right"
-                      className="max-w-[200px] text-xs"
-                    >
-                      <div className="font-medium">{tool.name}</div>
-                      <div className="text-muted-foreground mt-0.5">
-                        {tool.description}
-                      </div>
-                      {!tool.enabled && (
-                        <div className="text-amber-600 dark:text-amber-400 mt-1 font-medium">
-                          Coming soon
-                        </div>
-                      )}
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
-            </div>
-          </CollapsibleSection>
-
-          <SidebarSeparator className="my-1" />
-
-          {/* Tool-specific search bar */}
+          {/* Tool-specific search bar — shown FIRST, above tools */}
           {activeTool === "username-finder" && (
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (canSearch) onSubmit();
+                if (canSearch) handleSubmitAndClose(onSubmit);
               }}
               className="px-2 pb-2 space-y-2"
               suppressHydrationWarning
@@ -424,7 +388,7 @@ export function AppSidebar({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (canScanDomain) onDomainSubmit();
+                if (canScanDomain) handleSubmitAndClose(onDomainSubmit);
               }}
               className="px-2 pb-2 space-y-2"
               suppressHydrationWarning
@@ -460,6 +424,106 @@ export function AppSidebar({
               </Button>
             </form>
           )}
+
+          {activeTool === "breach-checker" && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (canCheckBreach) handleSubmitAndClose(onBreachSubmit);
+              }}
+              className="px-2 pb-2 space-y-2"
+              suppressHydrationWarning
+            >
+              <SidebarInput
+                value={breachInput}
+                onChange={(e) => onBreachInputChange(e.target.value)}
+                placeholder="email or username"
+                className="h-9"
+                autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                aria-label="Email or username to check"
+                name="breach-query"
+                type="text"
+              />
+              <Button
+                type="submit"
+                disabled={!canCheckBreach}
+                className="w-full h-9"
+                size="sm"
+              >
+                {breachLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                {breachLoading ? "Checking..." : "Check"}
+              </Button>
+            </form>
+          )}
+
+          <SidebarSeparator className="my-1" />
+
+          {/* Tools selector — collapsible, below search */}
+          <CollapsibleSection
+            label="Tools"
+            icon={<Filter className="h-3 w-3" />}
+            defaultOpen={true}
+          >
+            <div className="space-y-0.5 px-1">
+              {TOOLS.map((tool) => {
+                const ToolIcon = tool.icon;
+                const isActive = tool.id === activeTool;
+                return (
+                  <Tooltip key={tool.id}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        disabled={!tool.enabled}
+                        onClick={() => {
+                          if (tool.enabled) handleToolChange(tool.id);
+                        }}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
+                          isActive && tool.enabled
+                            ? "bg-primary text-primary-foreground font-medium"
+                            : tool.enabled
+                              ? "text-muted-foreground hover:bg-accent hover:text-foreground"
+                              : "text-muted-foreground/40 cursor-not-allowed"
+                        }`}
+                        aria-disabled={!tool.enabled}
+                      >
+                        <ToolIcon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="flex-1 text-left truncate">
+                          {tool.name}
+                        </span>
+                        {!tool.enabled && (
+                          <Lock className="h-2.5 w-2.5 shrink-0 opacity-60" />
+                        )}
+                        {isActive && tool.enabled && (
+                          <Check className="h-3 w-3 shrink-0" />
+                        )}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="right"
+                      className="max-w-[200px] text-xs"
+                    >
+                      <div className="font-medium">{tool.name}</div>
+                      <div className="text-muted-foreground mt-0.5">
+                        {tool.description}
+                      </div>
+                      {!tool.enabled && (
+                        <div className="text-amber-600 dark:text-amber-400 mt-1 font-medium">
+                          Coming soon
+                        </div>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </CollapsibleSection>
         </SidebarHeader>
 
         <SidebarSeparator />
@@ -612,6 +676,44 @@ export function AppSidebar({
                     <span>{item}</span>
                   </div>
                 ))}
+              </div>
+            </CollapsibleSection>
+          )}
+
+          {/* Breach Checker info — collapsible */}
+          {activeTool === "breach-checker" && (
+            <CollapsibleSection
+              label="How it works"
+              icon={<ShieldCheck className="h-3 w-3" />}
+              defaultOpen={false}
+            >
+              <div className="px-2 space-y-1.5 text-[11px] text-muted-foreground">
+                <p>
+                  Checks if an email address or username appears in known data
+                  breaches using the free{" "}
+                  <a
+                    href="https://haveibeenpwned.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Have I Been Pwned
+                  </a>{" "}
+                  API.
+                </p>
+                <div className="space-y-1 pt-1">
+                  <div className="font-medium text-foreground">Returns:</div>
+                  {[
+                    "Number of breaches the query appears in",
+                    "Breach names, dates, and data classes exposed",
+                    "Whether the query appears in pastes",
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-1.5">
+                      <Check className="h-3 w-3 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </CollapsibleSection>
           )}

@@ -16,6 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   SidebarInset,
   SidebarProvider,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +26,7 @@ import { ProfileDialog } from "./profile-dialog";
 import { AppSidebar, type StatusFilter } from "./app-sidebar";
 import { DomainScannerView } from "./domain-scanner-view";
 import { LandingPage } from "./landing-page";
+import { BreachCheckerView } from "./breach-checker-view";
 import type { HitStatus } from "./hit-types";
 
 interface Hit {
@@ -105,6 +107,12 @@ export default function Home() {
   const [domainLoading, setDomainLoading] = useState(false);
   const [domainScanTrigger, setDomainScanTrigger] = useState(0);
 
+  // Breach Checker state
+  const [breachInput, setBreachInput] = useState("");
+  const [breachLoading, setBreachLoading] = useState(false);
+  const [breachResult, setBreachResult] = useState<unknown>(null);
+  const [breachError, setBreachError] = useState<string | null>(null);
+
   const { toast } = useToast();
   const abortRef = useRef<AbortController | null>(null);
 
@@ -125,6 +133,18 @@ export default function Home() {
   }, [domainInput]);
 
   const canScanDomain = cleanedDomain.length > 0 && !domainLoading;
+
+  // Breach check validation — accepts emails or usernames
+  const cleanedBreachQuery = useMemo(() => {
+    const v = breachInput.trim();
+    if (!v) return "";
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    const isUsername = /^[A-Za-z0-9_.-]+$/.test(v);
+    if (!isEmail && !isUsername) return "";
+    return v;
+  }, [breachInput]);
+
+  const canCheckBreach = cleanedBreachQuery.length > 0 && !breachLoading;
 
   const canSearch = cleanedUsername.length > 0 && !loading;
 
@@ -211,6 +231,42 @@ export default function Home() {
       setDomainLoading(false);
     }
   }, [cleanedDomain, toast]);
+
+  // --- Breach Checker ---
+  const runBreachCheck = useCallback(async () => {
+    if (!cleanedBreachQuery) {
+      toast({
+        title: "Invalid query",
+        description: "Enter a valid email address or username.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setBreachLoading(true);
+    setBreachResult(null);
+    setBreachError(null);
+
+    try {
+      const res = await fetch(
+        `/api/check-breaches?query=${encodeURIComponent(cleanedBreachQuery)}`,
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
+      setBreachResult(data);
+    } catch (err) {
+      setBreachError((err as Error).message);
+      toast({
+        title: "Breach check failed",
+        description: (err as Error).message,
+        variant: "destructive",
+      });
+    } finally {
+      setBreachLoading(false);
+    }
+  }, [cleanedBreachQuery, toast]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -314,14 +370,21 @@ export default function Home() {
         onDomainSubmit={runDomainScan}
         canScanDomain={canScanDomain}
         domainLoading={domainLoading}
+        breachInput={breachInput}
+        onBreachInputChange={setBreachInput}
+        onBreachSubmit={runBreachCheck}
+        canCheckBreach={canCheckBreach}
+        breachLoading={breachLoading}
       />
 
       {/* ---------- Main content area ---------- */}
       <SidebarInset>
-        {/* Top bar: title + summary (sidebar toggle is now inside the sidebar) */}
+        {/* Top bar: mobile trigger + title + summary */}
         <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b border-border/60 bg-background/95 backdrop-blur px-4">
+          {/* Mobile-only sidebar trigger (desktop toggle is inside the sidebar) */}
+          <SidebarTrigger className="md:hidden -ml-1" />
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <Globe2 className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Globe2 className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
             <h1 className="text-sm font-semibold truncate">
               {activeTool === "username-finder" && results && (
                 <>
@@ -344,6 +407,17 @@ export default function Home() {
               )}
               {activeTool === "domain-scanner" && !domainResult && (
                 "Domain Scanner"
+              )}
+              {activeTool === "breach-checker" && breachResult && (
+                <>
+                  Breach check:{" "}
+                  <span className="font-mono text-primary">
+                    {(breachResult as { query: string }).query}
+                  </span>
+                </>
+              )}
+              {activeTool === "breach-checker" && !breachResult && (
+                "Breach Checker"
               )}
             </h1>
           </div>
@@ -425,6 +499,15 @@ export default function Home() {
               result={domainResult as import("./domain-scanner-view").DomainScanResult | null}
               loading={domainLoading}
               error={domainError}
+            />
+          )}
+
+          {/* ---- Breach Checker view ---- */}
+          {activeTool === "breach-checker" && (
+            <BreachCheckerView
+              result={breachResult as import("./breach-checker-view").BreachCheckResult | null}
+              loading={breachLoading}
+              error={breachError}
             />
           )}
         </main>

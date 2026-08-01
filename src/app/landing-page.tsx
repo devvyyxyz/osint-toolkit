@@ -93,10 +93,10 @@ export function LandingPage({ onEnter, totalPlatforms }: LandingPageProps) {
               onClick={() => onEnter("domain-scanner")}
             />
             <FeatureCard
-              icon={<Search className="h-5 w-5" />}
-              title="More Tools"
-              desc="Email lookup, phone lookup, reverse image, IP lookup, breach checker, and social graph — coming soon."
-              disabled
+              icon={<Shield className="h-5 w-5" />}
+              title="Breach Checker"
+              desc="Check if an email or username appears in known data breaches via the Have I Been Pwned API."
+              onClick={() => onEnter("breach-checker")}
             />
           </div>
 

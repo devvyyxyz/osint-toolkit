@@ -25,6 +25,28 @@ import {
   PanelLeftClose,
   Home,
   Settings as SettingsIcon,
+  Mail,
+  MessageSquare,
+  Fingerprint,
+  Wifi,
+  Database,
+  FileSearch,
+  Crosshair,
+  Users,
+  Link2,
+  Hash,
+  Key,
+  Eye,
+  Download,
+  Activity,
+  Server,
+  Network,
+  Code,
+  Bitcoin,
+  Clock,
+  Calendar,
+  Bookmark,
+  Layers,
 } from "lucide-react";
 import {
   Sidebar,
@@ -58,7 +80,7 @@ import type { HitStatus } from "./hit-types";
 export type StatusFilter = "all" | HitStatus;
 
 /* ------------------------------------------------------------------ */
-/*  Tool registry                                                      */
+/*  Tool registry with category groups                                 */
 /* ------------------------------------------------------------------ */
 
 interface ToolDef {
@@ -69,64 +91,258 @@ interface ToolDef {
   enabled: boolean;
 }
 
-const TOOLS: ToolDef[] = [
+interface ToolGroup {
+  label: string;
+  tools: ToolDef[];
+}
+
+const TOOL_GROUPS: ToolGroup[] = [
   {
-    id: "username-finder",
-    name: "Username Finder",
-    description: "Search @usernames across 100+ social platforms",
-    icon: AtSign,
-    enabled: true,
+    label: "Identity",
+    tools: [
+      {
+        id: "username-finder",
+        name: "Username Finder",
+        description: "Search @usernames across 100+ social platforms",
+        icon: AtSign,
+        enabled: true,
+      },
+      {
+        id: "email-lookup",
+        name: "Email Lookup",
+        description: "Find accounts linked to an email address across services",
+        icon: Mail,
+        enabled: false,
+      },
+      {
+        id: "phone-lookup",
+        name: "Phone Lookup",
+        description: "Find accounts linked to a phone number via caller ID & social",
+        icon: Phone,
+        enabled: false,
+      },
+      {
+        id: "reverse-image",
+        name: "Reverse Image",
+        description: "Find where a profile picture appears across the web",
+        icon: ImageIcon,
+        enabled: false,
+      },
+      {
+        id: "name-search",
+        name: "Name Search",
+        description: "Search for a person by real name across public records",
+        icon: Users,
+        enabled: false,
+      },
+      {
+        id: "fingerprint",
+        name: "Fingerprint",
+        description: "Generate a digital fingerprint for an identity",
+        icon: Fingerprint,
+        enabled: false,
+      },
+    ],
   },
   {
-    id: "email-lookup",
-    name: "Email Lookup",
-    description: "Find accounts linked to an email address",
-    icon: Search,
-    enabled: false,
+    label: "Network",
+    tools: [
+      {
+        id: "domain-scanner",
+        name: "Domain Scanner",
+        description: "DNS, WHOIS, SSL, subdomains, tech stack & security headers",
+        icon: Globe,
+        enabled: true,
+      },
+      {
+        id: "ip-lookup",
+        name: "IP Lookup",
+        description: "Geolocate an IP and see ASN, ISP, and hosting info",
+        icon: MapPin,
+        enabled: false,
+      },
+      {
+        id: "wifi-scanner",
+        name: "WiFi Scanner",
+        description: "Scan nearby WiFi networks and their security",
+        icon: Wifi,
+        enabled: false,
+      },
+      {
+        id: "port-scanner",
+        name: "Port Scanner",
+        description: "Scan a host for open ports and running services",
+        icon: Network,
+        enabled: false,
+      },
+      {
+        id: "dns-lookup",
+        name: "DNS Lookup",
+        description: "Query DNS records for a domain across all record types",
+        icon: Server,
+        enabled: false,
+      },
+      {
+        id: "ssl-inspector",
+        name: "SSL Inspector",
+        description: "Inspect SSL/TLS certificate chain for any domain",
+        icon: Lock,
+        enabled: false,
+      },
+    ],
   },
   {
-    id: "phone-lookup",
-    name: "Phone Lookup",
-    description: "Find accounts linked to a phone number",
-    icon: Phone,
-    enabled: false,
+    label: "Security",
+    tools: [
+      {
+        id: "breach-checker",
+        name: "Breach Checker",
+        description: "Check if an email or username appears in known data breaches",
+        icon: ShieldCheck,
+        enabled: true,
+      },
+      {
+        id: "password-checker",
+        name: "Password Strength",
+        description: "Check password strength and breach history",
+        icon: Key,
+        enabled: false,
+      },
+      {
+        id: "malware-scanner",
+        name: "Malware Scanner",
+        description: "Scan a URL or file against known malware databases",
+        icon: ShieldAlert,
+        enabled: false,
+      },
+      {
+        id: "phishing-detector",
+        name: "Phishing Detector",
+        description: "Check if a URL is flagged as a phishing site",
+        icon: Crosshair,
+        enabled: false,
+      },
+      {
+        id: "vuln-scanner",
+        name: "Vuln Scanner",
+        description: "Scan a domain for known CVEs and vulnerabilities",
+        icon: AlertTriangle,
+        enabled: false,
+      },
+      {
+        id: "privacy-audit",
+        name: "Privacy Audit",
+        description: "Audit your digital footprint across platforms",
+        icon: Eye,
+        enabled: false,
+      },
+    ],
   },
   {
-    id: "domain-scanner",
-    name: "Domain Scanner",
-    description: "Scan a domain for DNS, WHOIS, SSL, subdomains, tech stack & security headers",
-    icon: Globe,
-    enabled: true,
+    label: "Investigation",
+    tools: [
+      {
+        id: "social-graph",
+        name: "Social Graph",
+        description: "Map connections between accounts across platforms",
+        icon: Share2,
+        enabled: false,
+      },
+      {
+        id: "metadata-extractor",
+        name: "Metadata Extractor",
+        description: "Extract EXIF and metadata from images and documents",
+        icon: FileSearch,
+        enabled: false,
+      },
+      {
+        id: "wayback-explorer",
+        name: "Wayback Explorer",
+        description: "Browse archived snapshots of any URL over time",
+        icon: Clock,
+        enabled: false,
+      },
+      {
+        id: "link-extractor",
+        name: "Link Extractor",
+        description: "Extract all links from a web page and analyze them",
+        icon: Link2,
+        enabled: false,
+      },
+      {
+        id: "hashtag-tracker",
+        name: "Hashtag Tracker",
+        description: "Track a hashtag across social platforms",
+        icon: Hash,
+        enabled: false,
+      },
+      {
+        id: "archive-search",
+        name: "Archive Search",
+        description: "Search deleted content across archive services",
+        icon: Bookmark,
+        enabled: false,
+      },
+    ],
   },
   {
-    id: "image-search",
-    name: "Reverse Image",
-    description: "Find where a profile picture appears online",
-    icon: ImageIcon,
-    enabled: false,
+    label: "Crypto & Finance",
+    tools: [
+      {
+        id: "crypto-wallet",
+        name: "Crypto Wallet",
+        description: "Look up a blockchain wallet address and transaction history",
+        icon: Bitcoin,
+        enabled: false,
+      },
+      {
+        id: "transaction-tracer",
+        name: "Transaction Tracer",
+        description: "Trace cryptocurrency transactions across the blockchain",
+        icon: Activity,
+        enabled: false,
+      },
+    ],
   },
   {
-    id: "ip-lookup",
-    name: "IP Lookup",
-    description: "Geolocate an IP address and see its hosting info",
-    icon: MapPin,
-    enabled: false,
-  },
-  {
-    id: "breach-checker",
-    name: "Breach Checker",
-    description: "Check if an email or username appears in known data breaches",
-    icon: ShieldCheck,
-    enabled: true,
-  },
-  {
-    id: "social-graph",
-    name: "Social Graph",
-    description: "Map connections between accounts across platforms",
-    icon: Share2,
-    enabled: false,
+    label: "Developer",
+    tools: [
+      {
+        id: "tech-detector",
+        name: "Tech Detector",
+        description: "Identify technologies powering any website",
+        icon: Code,
+        enabled: false,
+      },
+      {
+        id: "api-explorer",
+        name: "API Explorer",
+        description: "Discover and test public APIs for any service",
+        icon: Database,
+        enabled: false,
+      },
+      {
+        id: "github-search",
+        name: "Code Search",
+        description: "Search for code, repos, and developer profiles",
+        icon: FileSearch,
+        enabled: false,
+      },
+      {
+        id: "dns-history",
+        name: "DNS History",
+        description: "View historical DNS records for a domain",
+        icon: Calendar,
+        enabled: false,
+      },
+    ],
   },
 ];
+
+/** Flatten all tools for counting / lookup */
+const ALL_TOOLS: ToolDef[] = TOOL_GROUPS.flatMap((g) => g.tools);
+const ENABLED_COUNT = ALL_TOOLS.filter((t) => t.enabled).length;
+const TOTAL_COUNT = ALL_TOOLS.length;
 
 /* ------------------------------------------------------------------ */
 /*  Collapsible section wrapper                                        */
@@ -468,63 +684,74 @@ export function AppSidebar({
 
           <SidebarSeparator className="my-1" />
 
-          {/* Tools selector — collapsible, below search */}
+          {/* Tools selector — collapsible, grouped by category */}
           <CollapsibleSection
-            label="Tools"
+            label={`Tools (${ENABLED_COUNT}/${TOTAL_COUNT})`}
             icon={<Filter className="h-3 w-3" />}
             defaultOpen={true}
           >
-            <div className="space-y-0.5 px-1">
-              {TOOLS.map((tool) => {
-                const ToolIcon = tool.icon;
-                const isActive = tool.id === activeTool;
-                return (
-                  <Tooltip key={tool.id}>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        disabled={!tool.enabled}
-                        onClick={() => {
-                          if (tool.enabled) handleToolChange(tool.id);
-                        }}
-                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
-                          isActive && tool.enabled
-                            ? "bg-primary text-primary-foreground font-medium"
-                            : tool.enabled
-                              ? "text-muted-foreground hover:bg-accent hover:text-foreground"
-                              : "text-muted-foreground/40 cursor-not-allowed"
-                        }`}
-                        aria-disabled={!tool.enabled}
-                      >
-                        <ToolIcon className="h-3.5 w-3.5 shrink-0" />
-                        <span className="flex-1 text-left truncate">
-                          {tool.name}
-                        </span>
-                        {!tool.enabled && (
-                          <Lock className="h-2.5 w-2.5 shrink-0 opacity-60" />
-                        )}
-                        {isActive && tool.enabled && (
-                          <Check className="h-3 w-3 shrink-0" />
-                        )}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="right"
-                      className="max-w-[200px] text-xs"
-                    >
-                      <div className="font-medium">{tool.name}</div>
-                      <div className="text-muted-foreground mt-0.5">
-                        {tool.description}
-                      </div>
-                      {!tool.enabled && (
-                        <div className="text-amber-600 dark:text-amber-400 mt-1 font-medium">
-                          Coming soon
-                        </div>
-                      )}
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
+            <div className="space-y-2 px-1">
+              {TOOL_GROUPS.map((group) => (
+                <div key={group.label}>
+                  {/* Group label */}
+                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground/60 px-2 py-1 font-semibold">
+                    {group.label}
+                  </div>
+                  {/* Tools in this group */}
+                  <div className="space-y-0.5">
+                    {group.tools.map((tool) => {
+                      const ToolIcon = tool.icon;
+                      const isActive = tool.id === activeTool;
+                      return (
+                        <Tooltip key={tool.id}>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              disabled={!tool.enabled}
+                              onClick={() => {
+                                if (tool.enabled) handleToolChange(tool.id);
+                              }}
+                              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
+                                isActive && tool.enabled
+                                  ? "bg-primary text-primary-foreground font-medium"
+                                  : tool.enabled
+                                    ? "text-muted-foreground hover:bg-accent hover:text-foreground"
+                                    : "text-muted-foreground/40 cursor-not-allowed"
+                              }`}
+                              aria-disabled={!tool.enabled}
+                            >
+                              <ToolIcon className="h-3.5 w-3.5 shrink-0" />
+                              <span className="flex-1 text-left truncate">
+                                {tool.name}
+                              </span>
+                              {!tool.enabled && (
+                                <Lock className="h-2.5 w-2.5 shrink-0 opacity-60" />
+                              )}
+                              {isActive && tool.enabled && (
+                                <Check className="h-3 w-3 shrink-0" />
+                              )}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="right"
+                            className="max-w-[200px] text-xs"
+                          >
+                            <div className="font-medium">{tool.name}</div>
+                            <div className="text-muted-foreground mt-0.5">
+                              {tool.description}
+                            </div>
+                            {!tool.enabled && (
+                              <div className="text-amber-600 dark:text-amber-400 mt-1 font-medium">
+                                Coming soon
+                              </div>
+                            )}
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </CollapsibleSection>
         </SidebarHeader>

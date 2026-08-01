@@ -27,6 +27,9 @@ import { AppSidebar, type StatusFilter } from "./app-sidebar";
 import { DomainScannerView } from "./domain-scanner-view";
 import { LandingPage } from "./landing-page";
 import { BreachCheckerView } from "./breach-checker-view";
+import { Onboarding } from "./onboarding";
+import { SettingsView } from "./settings-view";
+import { SettingsProvider, useSettings } from "./settings-context";
 import type { HitStatus } from "./hit-types";
 
 interface Hit {
@@ -88,8 +91,18 @@ const STATUS_META: Record<
 };
 
 export default function Home() {
-  // "landing" = the hero/landing page; "app" = the sidebar + tool view
+  return (
+    <SettingsProvider>
+      <HomeContent />
+    </SettingsProvider>
+  );
+}
+
+function HomeContent() {
+  const { settings } = useSettings();
+  // View flow: landing → onboarding → app (with optional settings overlay)
   const [view, setView] = useState<"landing" | "app">("landing");
+  const [showSettings, setShowSettings] = useState(false);
   const [activeTool, setActiveTool] = useState("username-finder");
   const [rawInput, setRawInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -249,7 +262,7 @@ export default function Home() {
 
     try {
       const res = await fetch(
-        `/api/check-breaches?query=${encodeURIComponent(cleanedBreachQuery)}`,
+        `/api/check-breaches?query=${encodeURIComponent(cleanedBreachQuery)}${settings.hibpApiKey ? `&apiKey=${encodeURIComponent(settings.hibpApiKey)}` : ""}`,
       );
       const data = await res.json();
       if (!res.ok) {
@@ -266,7 +279,7 @@ export default function Home() {
     } finally {
       setBreachLoading(false);
     }
-  }, [cleanedBreachQuery, toast]);
+  }, [cleanedBreachQuery, toast, settings.hibpApiKey]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -324,22 +337,38 @@ export default function Home() {
     setSelectedCategories(new Set());
   }, []);
 
-  // Enter the app from the landing page, optionally with a specific tool
+  // Enter the app — if onboarding isn't done, show the wizard first
   const enterApp = useCallback((tool?: string) => {
     if (tool) setActiveTool(tool);
-    setView("app");
-  }, []);
+    if (!settings.onboarded) {
+      // Onboarding will be shown because settings.onboarded is false
+      setView("app");
+    } else {
+      setView("app");
+    }
+  }, [settings.onboarded]);
 
   // Go back to the landing page
   const goHome = useCallback(() => {
     setView("landing");
+    setShowSettings(false);
   }, []);
 
   // ---- Landing page view ----
   if (view === "landing") {
     return (
       <>
-        <LandingPage onEnter={enterApp} totalPlatforms={totalPlatforms} />
+        <LandingPage onGetStarted={() => enterApp()} />
+        <Toaster />
+      </>
+    );
+  }
+
+  // ---- Onboarding (shown when in app view but not yet onboarded) ----
+  if (view === "app" && !settings.onboarded) {
+    return (
+      <>
+        <Onboarding onComplete={() => {}} />
         <Toaster />
       </>
     );
@@ -352,6 +381,7 @@ export default function Home() {
         activeTool={activeTool}
         onToolChange={setActiveTool}
         onGoHome={goHome}
+        onOpenSettings={() => setShowSettings(true)}
         rawInput={rawInput}
         onRawInputChange={setRawInput}
         onSubmit={runSearch}
@@ -454,6 +484,11 @@ export default function Home() {
 
         {/* Main scrollable area */}
         <main className="flex-1 p-4 sm:p-6">
+          {/* ---- Settings view (replaces tool view when open) ---- */}
+          {showSettings ? (
+            <SettingsView onBack={() => setShowSettings(false)} />
+          ) : (
+          <>
           {/* ---- Username Finder view ---- */}
           {activeTool === "username-finder" && (
             <>
@@ -509,6 +544,8 @@ export default function Home() {
               loading={breachLoading}
               error={breachError}
             />
+          )}
+          </>
           )}
         </main>
 

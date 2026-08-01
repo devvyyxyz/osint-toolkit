@@ -136,7 +136,9 @@ export async function GET(req: NextRequest) {
   }
 
   const started = Date.now();
-  const apiKey = process.env.HIBP_API_KEY;
+  // API key: prefer client-provided key (from settings), fall back to env var
+  const clientKey = req.nextUrl.searchParams.get("apiKey") ?? "";
+  const apiKey = clientKey || process.env.HIBP_API_KEY;
 
   try {
     const encoded = encodeURIComponent(sanitized.value);

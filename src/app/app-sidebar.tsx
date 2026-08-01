@@ -24,6 +24,7 @@ import {
   ChevronRight,
   PanelLeftClose,
   Home,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -180,6 +181,7 @@ export interface AppSidebarProps {
   activeTool: string;
   onToolChange: (toolId: string) => void;
   onGoHome: () => void;
+  onOpenSettings: () => void;
   rawInput: string;
   onRawInputChange: (v: string) => void;
   onSubmit: () => void;
@@ -283,6 +285,7 @@ export function AppSidebar({
   activeTool,
   onToolChange,
   onGoHome,
+  onOpenSettings,
   rawInput,
   onRawInputChange,
   onSubmit,
@@ -722,6 +725,15 @@ export function AppSidebar({
         {/* ---------- Footer ---------- */}
         <SidebarFooter>
           <SidebarSeparator />
+          {/* Settings button */}
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          >
+            <SettingsIcon className="h-3.5 w-3.5 shrink-0" />
+            <span>Settings</span>
+          </button>
           <div className="px-3 py-2 text-[10px] text-muted-foreground space-y-1">
             <div className="flex items-center justify-between">
               <span>Platforms</span>

@@ -44,6 +44,10 @@ export interface BreachCheckResult {
   fetchedAt: string;
   durationMs: number;
   cached: boolean;
+  /** When the HIBP API is unavailable (no key, Cloudflare, rate limit),
+   *  this explains why and what the user can do. */
+  apiStatus: "ok" | "no_api_key" | "cloudflare_blocked" | "rate_limited" | "error";
+  apiMessage?: string;
   error?: string;
 }
 
@@ -56,23 +60,43 @@ const HIBP_API = "https://haveibeenpwned.com/api/v3";
 function sanitizeQuery(raw: string): { value: string; type: "email" | "username" } | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
-  // Email regex (simplified)
   const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
-  // Username: alphanumeric + dots, dashes, underscores
   const isUsername = /^[A-Za-z0-9_.-]+$/.test(trimmed);
   if (isEmail) return { value: trimmed.toLowerCase(), type: "email" };
   if (isUsername && trimmed.length <= 100) return { value: trimmed, type: "username" };
   return null;
 }
 
-async function fetchHibp(path: string): Promise<{ status: number; data: unknown }> {
+/**
+ * Fetch from HIBP. Returns:
+ *  - { status, data } on a JSON response
+ *  - { status, html: true } if the response is HTML (Cloudflare challenge)
+ */
+async function fetchHibp(
+  path: string,
+  apiKey?: string,
+): Promise<{ status: number; data: unknown; isHtml: boolean }> {
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "User-Agent": "OSINT-Toolkit/1.0",
+  };
+  if (apiKey) {
+    headers["hibp-api-key"] = apiKey;
+  }
+
   const res = await fetch(`${HIBP_API}${path}`, {
-    headers: {
-      Accept: "application/json",
-      "User-Agent": "OSINT-Toolkit/1.0",
-    },
+    headers,
     signal: AbortSignal.timeout(10000),
   });
+
+  const contentType = res.headers.get("content-type") || "";
+
+  // HIBP returns JSON for API responses. If we get HTML, it's a
+  // Cloudflare challenge page — the API is blocking us.
+  if (contentType.includes("text/html")) {
+    return { status: res.status, data: null, isHtml: true };
+  }
+
   let data: unknown = null;
   if (res.status === 200) {
     try {
@@ -81,7 +105,7 @@ async function fetchHibp(path: string): Promise<{ status: number; data: unknown 
       /* noop */
     }
   }
-  return { status: res.status, data };
+  return { status: res.status, data, isHtml: false };
 }
 
 /* ------------------------------------------------------------------ */
@@ -112,28 +136,98 @@ export async function GET(req: NextRequest) {
   }
 
   const started = Date.now();
+  const apiKey = process.env.HIBP_API_KEY;
 
   try {
-    // HIBP API: breaches for an account (email or username)
-    // Note: HIBP v3 requires the query to be URL-encoded.
-    // For usernames, the API treats them the same as emails — it checks
-    // if that string appears as an account identifier in any breach.
     const encoded = encodeURIComponent(sanitized.value);
 
+    // Attempt the HIBP API
     const [breachRes, pasteRes] = await Promise.allSettled([
-      fetchHibp(`/breachedaccount?account=${encoded}&truncateResponse=false`),
-      // Pastes are email-only
+      fetchHibp(`/breachedaccount?account=${encoded}&truncateResponse=false`, apiKey),
       sanitized.type === "email"
-        ? fetchHibp(`/pasteaccount/${encoded}`)
-        : Promise.resolve({ status: 404, data: null }),
+        ? fetchHibp(`/pasteaccount/${encoded}`, apiKey)
+        : Promise.resolve({ status: 404, data: null, isHtml: false }),
     ]);
 
     const breachResult =
-      breachRes.status === "fulfilled" ? breachRes.value : { status: 0, data: null, error: breachRes.reason?.message };
+      breachRes.status === "fulfilled"
+        ? breachRes.value
+        : { status: 0, data: null, isHtml: false };
     const pasteResult =
-      pasteRes.status === "fulfilled" ? pasteRes.value : { status: 0, data: null };
+      pasteRes.status === "fulfilled"
+        ? pasteRes.value
+        : { status: 404, data: null, isHtml: false };
 
-    // 404 from HIBP means "not found in any breach" — that's a good result
+    // --- Detect API unavailability ---
+
+    // Cloudflare challenge (HTML response)
+    if (breachResult.isHtml) {
+      const payload: BreachCheckResult = {
+        query: sanitized.value,
+        queryType: sanitized.type,
+        found: false,
+        breachCount: 0,
+        breaches: [],
+        pasteCount: 0,
+        pastes: [],
+        fetchedAt: new Date().toISOString(),
+        durationMs: Date.now() - started,
+        cached: false,
+        apiStatus: apiKey ? "cloudflare_blocked" : "no_api_key",
+        apiMessage: apiKey
+          ? "Have I Been Pwned is blocking this server's requests (Cloudflare). Try again later."
+          : "Have I Been Pwned now requires a free API key for account lookups. Get one at haveibeenpwned.com/API/Key and set it as the HIBP_API_KEY environment variable.",
+      };
+      return NextResponse.json(payload, {
+        headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+      });
+    }
+
+    // 401 = API key required
+    if (breachResult.status === 401) {
+      const payload: BreachCheckResult = {
+        query: sanitized.value,
+        queryType: sanitized.type,
+        found: false,
+        breachCount: 0,
+        breaches: [],
+        pasteCount: 0,
+        pastes: [],
+        fetchedAt: new Date().toISOString(),
+        durationMs: Date.now() - started,
+        cached: false,
+        apiStatus: "no_api_key",
+        apiMessage:
+          "Have I Been Pwned requires a free API key for account lookups. Get one at haveibeenpwned.com/API/Key and set it as the HIBP_API_KEY environment variable.",
+      };
+      return NextResponse.json(payload, {
+        headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+      });
+    }
+
+    // 429 = rate limited
+    if (breachResult.status === 429) {
+      const payload: BreachCheckResult = {
+        query: sanitized.value,
+        queryType: sanitized.type,
+        found: false,
+        breachCount: 0,
+        breaches: [],
+        pasteCount: 0,
+        pastes: [],
+        fetchedAt: new Date().toISOString(),
+        durationMs: Date.now() - started,
+        cached: false,
+        apiStatus: "rate_limited",
+        apiMessage:
+          "Have I Been Pwned API rate limit exceeded. Try again in a minute.",
+      };
+      return NextResponse.json(payload, {
+        headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+      });
+    }
+
+    // 404 = genuinely not found in any breach (good news!)
     if (breachResult.status === 404) {
       const payload: BreachCheckResult = {
         query: sanitized.value,
@@ -146,6 +240,7 @@ export async function GET(req: NextRequest) {
         fetchedAt: new Date().toISOString(),
         durationMs: Date.now() - started,
         cached: false,
+        apiStatus: "ok",
       };
       cacheSet(cacheKey, payload, 10 * 60 * 1000);
       return NextResponse.json(payload, {
@@ -153,36 +248,33 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    if (breachResult.status === 401) {
-      return NextResponse.json(
-        {
-          error: "HIBP API rejected the request. The query format may not be supported.",
-        } as Partial<BreachCheckResult>,
-        { status: 400 },
-      );
-    }
-
-    if (breachResult.status === 429) {
-      return NextResponse.json(
-        {
-          error: "HIBP API rate limit exceeded. Try again in a minute.",
-        } as Partial<BreachCheckResult>,
-        { status: 429 },
-      );
-    }
-
+    // Any other unexpected status
     if (breachResult.status !== 200) {
-      return NextResponse.json(
-        {
-          error: `HIBP API returned HTTP ${breachResult.status}`,
-        } as Partial<BreachCheckResult>,
-        { status: 502 },
-      );
+      const payload: BreachCheckResult = {
+        query: sanitized.value,
+        queryType: sanitized.type,
+        found: false,
+        breachCount: 0,
+        breaches: [],
+        pasteCount: 0,
+        pastes: [],
+        fetchedAt: new Date().toISOString(),
+        durationMs: Date.now() - started,
+        cached: false,
+        apiStatus: "error",
+        apiMessage: `HIBP API returned HTTP ${breachResult.status}`,
+      };
+      return NextResponse.json(payload, {
+        headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+      });
     }
 
+    // --- Success — we have real breach data ---
     const breaches = (breachResult.data as Breach[]) || [];
     const pastes =
-      pasteResult.status === 200 ? ((pasteResult as { data: unknown }).data as Paste[]) || [] : [];
+      pasteResult.status === 200 && !pasteResult.isHtml
+        ? (pasteResult.data as Paste[]) || []
+        : [];
 
     const payload: BreachCheckResult = {
       query: sanitized.value,
@@ -199,6 +291,7 @@ export async function GET(req: NextRequest) {
       fetchedAt: new Date().toISOString(),
       durationMs: Date.now() - started,
       cached: false,
+      apiStatus: "ok",
     };
 
     cacheSet(cacheKey, payload, 10 * 60 * 1000);
@@ -217,7 +310,9 @@ export async function GET(req: NextRequest) {
       fetchedAt: new Date().toISOString(),
       durationMs: Date.now() - started,
       cached: false,
+      apiStatus: "error",
       error: (e as Error).message,
+      apiMessage: `Network error: ${(e as Error).message}`,
     };
     return NextResponse.json(payload, { status: 500 });
   }

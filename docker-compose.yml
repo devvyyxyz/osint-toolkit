@@ -7,6 +7,11 @@
 # Or from the UGNAS SSH shell:
 #   docker compose up -d
 #
+# To update to the latest files:
+#   ./deploy.sh
+#  or manually:
+#   docker compose build --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) && docker compose up -d
+#
 # Once running, open http://<your-NAS-ip>:3000 in a browser.
 ###############################################################################
 
@@ -20,6 +25,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # BUILD_DATE is set automatically by deploy.sh. When building manually
+      # via `docker compose build`, pass it to force a fresh build:
+      #   docker compose build --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+      args:
+        BUILD_DATE: ${BUILD_DATE:-unknown}
     # image: ghcr.io/your-username/osint-toolkit:latest
 
     # --- Container identity ---

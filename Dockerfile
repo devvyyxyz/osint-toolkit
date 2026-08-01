@@ -46,6 +46,14 @@ RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists
 
 RUN npm install -g bun@1.3
 
+# This arg changes every build (set via docker-compose or deploy.sh).
+# It forces Docker to invalidate the cache from the COPY step onward,
+# so the latest source files are always used — even if Docker thinks
+# the COPY layer is cached. Layers before this (apt-get, npm install)
+# are still cached for fast rebuilds.
+ARG BUILD_DATE=unknown
+RUN echo "Build date: ${BUILD_DATE}"
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 

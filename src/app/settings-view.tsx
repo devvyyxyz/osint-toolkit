@@ -46,6 +46,7 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
   const [timeout, setTimeout_] = React.useState(settings.requestTimeoutSeconds);
   const [userAgent, setUserAgent] = React.useState(settings.userAgent);
   const [privacyMode, setPrivacyMode] = React.useState(settings.privacyMode);
+  const [searchMode, setSearchMode] = React.useState(settings.searchMode);
   const [showKey, setShowKey] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
 
@@ -56,6 +57,7 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
       requestTimeoutSeconds: timeout,
       userAgent,
       privacyMode,
+      searchMode,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -286,6 +288,31 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
                 The browser identity sent to platforms during probing. A
                 realistic UA helps avoid bot detection.
               </p>
+            </div>
+
+            {/* Search execution mode */}
+            <div className="space-y-2 pt-2 border-t border-border/60">
+              <Label className="text-xs">Search Execution Mode</Label>
+              <div className="space-y-1.5">
+                {[
+                  { value: "parallel", label: "Parallel (all at once)", desc: "Fastest — fires all probes simultaneously. Results appear when all complete." },
+                  { value: "incremental", label: "Incremental (streaming)", desc: "Results appear one-by-one as each probe completes. Slower overall but live feedback." },
+                  { value: "steps", label: "Steps (batched)", desc: "Probes run in small batches with pauses. Gentler on rate limits." },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSearchMode(opt.value as "parallel" | "incremental" | "steps")}
+                    className={`w-full text-left px-3 py-2 rounded-md text-xs transition-colors ${
+                      searchMode === opt.value
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    <div className="font-medium">{opt.label}</div>
+                    <div className={`text-[10px] mt-0.5 ${searchMode === opt.value ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{opt.desc}</div>
+                  </button>
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>

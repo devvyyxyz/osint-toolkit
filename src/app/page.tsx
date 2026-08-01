@@ -58,6 +58,7 @@ import {
   TransactionTracerView,
 } from "./network-crypto-views";
 import { GenericResults, LinkListResults, ToolLoading, ToolError, ToolEmpty } from "./generic-tool-views";
+import { ErrorBoundary } from "./error-boundary";
 import { Onboarding } from "./onboarding";
 import { SettingsView } from "./settings-view";
 import { LeftPanel, type DashboardSection } from "./left-panel";
@@ -624,6 +625,21 @@ function HomeContent() {
                 <LayoutGrid className="h-4 w-4 text-muted-foreground shrink-0" />
                 <h1 className="text-sm font-semibold truncate">Overview</h1>
               </>
+            ) : activeSection === "watchlist" ? (
+              <>
+                <Eye className="h-4 w-4 text-muted-foreground shrink-0" />
+                <h1 className="text-sm font-semibold truncate">Watchlist</h1>
+              </>
+            ) : activeSection === "favorites" ? (
+              <>
+                <Star className="h-4 w-4 text-muted-foreground shrink-0" />
+                <h1 className="text-sm font-semibold truncate">Favorites</h1>
+              </>
+            ) : activeSection === "news" ? (
+              <>
+                <Newspaper className="h-4 w-4 text-muted-foreground shrink-0" />
+                <h1 className="text-sm font-semibold truncate">News</h1>
+              </>
             ) : (
               <>
                 {(() => {
@@ -666,12 +682,29 @@ function HomeContent() {
 
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
           {activeSection === "overview" ? (
+            <ErrorBoundary>
             <OverviewPage
               history={history}
               onClearHistory={clearHistory}
               watchlist={watchlist}
               onRemoveWatch={removeWatch}
             />
+            </ErrorBoundary>
+          ) : activeSection === "watchlist" ? (
+            <ErrorBoundary>
+            <WatchlistPage
+              watchlist={watchlist}
+              onRemoveWatch={removeWatch}
+            />
+            </ErrorBoundary>
+          ) : activeSection === "favorites" ? (
+            <ErrorBoundary>
+            <FavoritesPage starredTools={starredTools} onToolChange={setActiveTool} onToggleStar={toggleStar} />
+            </ErrorBoundary>
+          ) : activeSection === "news" ? (
+            <ErrorBoundary>
+            <NewsPage />
+            </ErrorBoundary>
           ) : showSettings ? (
             <SettingsView onBack={() => setShowSettings(false)} activeSection={activeSettingsSection} />
           ) : (
@@ -1186,6 +1219,140 @@ function OverviewPage({
           <p className="text-xs">Star tools in the sidebar to pin them here.</p>
         </div>
       </OverviewSection>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Watchlist page                                                     */
+/* ------------------------------------------------------------------ */
+
+function WatchlistPage({
+  watchlist,
+  onRemoveWatch,
+}: {
+  watchlist: Array<{ id: string; tool: string; query: string; label?: string; addedAt: number; lastChecked?: number }>;
+  onRemoveWatch: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-6 max-w-4xl">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Watchlist</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Monitor usernames, domains, and emails for changes. Items added from any tool's results.
+        </p>
+      </div>
+      {watchlist.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
+          <Eye className="h-10 w-10 mb-4 opacity-30" />
+          <p className="text-sm font-medium mb-1">No items in watchlist</p>
+          <p className="text-xs">Use the eye icon in any tool's top bar to add items here.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {watchlist.map((item) => {
+            const tool = ALL_TOOLS.find((t) => t.id === item.tool);
+            const Icon = tool?.icon ?? Eye;
+            return (
+              <div key={item.id} className="flex items-center gap-3 p-3 rounded-lg border border-border/60 hover:bg-accent/30 transition-colors">
+                <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{item.label ?? item.query}</div>
+                  <div className="text-[10px] text-muted-foreground">{tool?.name ?? item.tool}</div>
+                </div>
+                {item.lastChecked && (
+                  <span className="text-[10px] text-muted-foreground shrink-0">
+                    Last checked {new Date(item.lastChecked).toLocaleDateString()}
+                  </span>
+                )}
+                <button onClick={() => onRemoveWatch(item.id)} className="text-muted-foreground hover:text-destructive shrink-0 p-1">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Favorites page                                                     */
+/* ------------------------------------------------------------------ */
+
+function FavoritesPage({
+  starredTools,
+  onToolChange,
+  onToggleStar,
+}: {
+  starredTools: Set<string>;
+  onToolChange: (toolId: string) => void;
+  onToggleStar: (toolId: string) => void;
+}) {
+  const starred = ALL_TOOLS.filter((t) => starredTools.has(t.id));
+  return (
+    <div className="space-y-6 max-w-4xl">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Favorites</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Your starred tools for quick access. Star tools from the Tools sidebar.
+        </p>
+      </div>
+      {starred.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
+          <Star className="h-10 w-10 mb-4 opacity-30" />
+          <p className="text-sm font-medium mb-1">No favorites yet</p>
+          <p className="text-xs">Click the star icon next to a tool in the sidebar to pin it here.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {starred.map((tool) => {
+            const Icon = tool.icon;
+            return (
+              <div
+                key={tool.id}
+                className="flex items-center gap-3 p-3 rounded-lg border border-border/60 bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer"
+                onClick={() => onToolChange(tool.id)}
+              >
+                <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{tool.name}</div>
+                  <div className="text-[10px] text-muted-foreground truncate">{tool.description}</div>
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onToggleStar(tool.id); }}
+                  className="shrink-0 p-1"
+                >
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  News page                                                          */
+/* ------------------------------------------------------------------ */
+
+function NewsPage() {
+  return (
+    <div className="space-y-6 max-w-4xl">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">News</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Latest updates and announcements for OSINT Toolkit.
+        </p>
+      </div>
+      <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
+        <Newspaper className="h-10 w-10 mb-4 opacity-30" />
+        <p className="text-sm font-medium mb-1">No news yet</p>
+        <p className="text-xs">Updates and release notes will appear here.</p>
+      </div>
     </div>
   );
 }

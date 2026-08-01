@@ -14,6 +14,9 @@ import {
   User,
   X,
   Send,
+  Eye,
+  Newspaper,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,7 +37,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-export type DashboardSection = "overview" | "tools";
+export type DashboardSection = "overview" | "tools" | "watchlist" | "news" | "favorites";
 
 interface DashboardSectionDef {
   id: DashboardSection;
@@ -45,6 +48,9 @@ interface DashboardSectionDef {
 const SECTIONS: DashboardSectionDef[] = [
   { id: "overview", label: "Overview", icon: LayoutGrid },
   { id: "tools", label: "Tools", icon: Wrench },
+  { id: "watchlist", label: "Watchlist", icon: Eye },
+  { id: "favorites", label: "Favorites", icon: Star },
+  { id: "news", label: "News", icon: Newspaper },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -345,32 +351,7 @@ export function LeftPanel({
 
         {/* Profile section at very bottom */}
         <div className="border-t border-border/60 p-2 shrink-0">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                className={cn(
-                  "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors",
-                  collapsed && "justify-center",
-                )}
-                aria-label="Profile"
-              >
-                <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0 border border-border/60">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                </div>
-                {!collapsed && (
-                  <div className="flex-1 min-w-0 text-left">
-                    <div className="text-xs font-medium text-foreground truncate">Guest</div>
-                    <div className="text-[10px] text-muted-foreground">Free plan</div>
-                  </div>
-                )}
-              </button>
-            </TooltipTrigger>
-            {collapsed && (
-              <TooltipContent side="right" className="text-xs">
-                Guest — Free plan
-              </TooltipContent>
-            )}
-          </Tooltip>
+          <ProfileSection collapsed={collapsed} />
         </div>
       </div>
 
@@ -382,5 +363,115 @@ export function LeftPanel({
         onReportTypeChange={setReportType}
       />
     </TooltipProvider>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Profile section — handles Discord login + guest mode                */
+/* ------------------------------------------------------------------ */
+
+interface DiscordUser {
+  userId: string;
+  username: string;
+  avatar: string | null;
+  email: string | null;
+}
+
+function ProfileSection({ collapsed }: { collapsed: boolean }) {
+  const [user, setUser] = React.useState<DiscordUser | null>(null);
+  const [showLoginMenu, setShowLoginMenu] = React.useState(false);
+
+  React.useEffect(() => {
+    fetch("/api/auth/session")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.loggedIn) setUser(data.user);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout");
+    setUser(null);
+    setShowLoginMenu(false);
+  };
+
+  return (
+    <div className="relative">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => !user && setShowLoginMenu(!showLoginMenu)}
+            className={cn(
+              "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors",
+              collapsed && "justify-center",
+            )}
+            aria-label={user ? "Profile" : "Sign in"}
+          >
+            {user?.avatar ? (
+              <img src={user.avatar} alt={user.username} className="h-7 w-7 rounded-full shrink-0 border border-border/60" referrerPolicy="no-referrer" />
+            ) : (
+              <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0 border border-border/60">
+                <User className="h-4 w-4 text-muted-foreground" />
+              </div>
+            )}
+            {!collapsed && (
+              <div className="flex-1 min-w-0 text-left">
+                <div className="text-xs font-medium text-foreground truncate">
+                  {user?.username ?? "Guest"}
+                </div>
+                <div className="text-[10px] text-muted-foreground">
+                  {user ? "Authenticated" : "Free plan · Click to sign in"}
+                </div>
+              </div>
+            )}
+          </button>
+        </TooltipTrigger>
+        {collapsed && (
+          <TooltipContent side="right" className="text-xs">
+            {user ? `${user.username} — Authenticated` : "Guest — Click to sign in"}
+          </TooltipContent>
+        )}
+      </Tooltip>
+
+      {/* Login dropdown */}
+      {showLoginMenu && !user && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowLoginMenu(false)} />
+          <div className={cn(
+            "absolute z-50 bg-background border border-border/60 rounded-md shadow-lg py-1 min-w-[180px]",
+            collapsed ? "left-12 bottom-0" : "left-0 bottom-12 right-0",
+          )}>
+            <a
+              href="/api/auth/discord"
+              className="flex items-center gap-2 px-3 py-2 hover:bg-accent transition-colors text-xs"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="#5865F2">
+                <path d="M20.317 4.37a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.33c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
+              </svg>
+              <span>Sign in with Discord</span>
+            </a>
+            <button
+              onClick={() => setShowLoginMenu(false)}
+              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-accent transition-colors text-xs text-muted-foreground"
+            >
+              <User className="h-4 w-4" />
+              <span>Continue as Guest</span>
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Logout button when logged in */}
+      {user && !collapsed && (
+        <button
+          onClick={handleLogout}
+          className="absolute right-2 top-2 text-[10px] text-muted-foreground hover:text-destructive"
+          title="Sign out"
+        >
+          Sign out
+        </button>
+      )}
+    </div>
   );
 }

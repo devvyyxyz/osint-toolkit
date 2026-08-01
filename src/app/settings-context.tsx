@@ -27,6 +27,13 @@ export interface Settings {
   /** Privacy mode — when true, results are never cached (default: false) */
   privacyMode: boolean;
 
+  /** Search execution mode:
+   *  - "parallel": all probes fire at once (fastest, default)
+   *  - "incremental": results appear one-by-one as they complete
+   *  - "steps": probes run in batches of N, pausing between batches
+   */
+  searchMode: "parallel" | "incremental" | "steps";
+
   /** Whether the user has completed onboarding */
   onboarded: boolean;
 }
@@ -49,6 +56,7 @@ export const DEFAULT_SETTINGS: Settings = {
   userAgent: USER_AGENTS[0],
   maxConcurrent: 0,
   privacyMode: false,
+  searchMode: "parallel",
   onboarded: false,
 };
 

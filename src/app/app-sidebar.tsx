@@ -85,9 +85,9 @@ const TOOLS: ToolDef[] = [
   {
     id: "domain-scanner",
     name: "Domain Scanner",
-    description: "Scan a domain for subdomains, tech stack & history",
+    description: "Scan a domain for DNS, WHOIS, SSL, subdomains, tech stack & security headers",
     icon: Globe,
-    enabled: false,
+    enabled: true,
   },
   {
     id: "image-search",
@@ -120,7 +120,11 @@ const TOOLS: ToolDef[] = [
 ];
 
 export interface AppSidebarProps {
-  /** Current raw input value (controlled). */
+  /** Which tool is currently active. */
+  activeTool: string;
+  onToolChange: (toolId: string) => void;
+
+  /** Username Finder props (only used when activeTool === "username-finder"). */
   rawInput: string;
   onRawInputChange: (v: string) => void;
   onSubmit: () => void;
@@ -151,6 +155,13 @@ export interface AppSidebarProps {
 
   /** Whether results are loaded — hides filter groups until a search has run. */
   hasResults: boolean;
+
+  /** Domain Scanner props (only used when activeTool === "domain-scanner"). */
+  domainInput: string;
+  onDomainInputChange: (v: string) => void;
+  onDomainSubmit: () => void;
+  canScanDomain: boolean;
+  domainLoading: boolean;
 }
 
 const STATUS_ITEMS: {
@@ -168,6 +179,8 @@ const STATUS_ITEMS: {
 ];
 
 export function AppSidebar({
+  activeTool,
+  onToolChange,
   rawInput,
   onRawInputChange,
   onSubmit,
@@ -181,6 +194,11 @@ export function AppSidebar({
   counts,
   totalPlatforms,
   hasResults,
+  domainInput,
+  onDomainInputChange,
+  onDomainSubmit,
+  canScanDomain,
+  domainLoading,
 }: AppSidebarProps) {
   const categories = React.useMemo(() => {
     const set = new Set<string>();
@@ -199,8 +217,8 @@ export function AppSidebar({
             <span className="font-semibold text-sm">OSINT Toolkit</span>
           </div>
 
-          {/* Tools selector — only Username Finder is active, the rest
-              are disabled "coming soon" placeholders. */}
+          {/* Tools selector — enabled tools are clickable and switch the
+              active view; disabled ones show a "coming soon" tooltip. */}
           <div className="px-2 pb-1">
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground px-1 mb-1">
               Tools
@@ -208,7 +226,7 @@ export function AppSidebar({
             <div className="space-y-0.5">
               {TOOLS.map((tool) => {
                 const ToolIcon = tool.icon;
-                const isActive = tool.id === "username-finder";
+                const isActive = tool.id === activeTool;
                 return (
                   <Tooltip key={tool.id}>
                     <TooltipTrigger asChild>
@@ -216,8 +234,7 @@ export function AppSidebar({
                         type="button"
                         disabled={!tool.enabled}
                         onClick={() => {
-                          // Only the active tool does anything — the
-                          // others are disabled and show a tooltip.
+                          if (tool.enabled) onToolChange(tool.id);
                         }}
                         className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
                           isActive && tool.enabled
@@ -262,55 +279,98 @@ export function AppSidebar({
 
           <SidebarSeparator className="my-1" />
 
-          {/* Search bar — only shown for the active tool (Username Finder) */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (canSearch) onSubmit();
-            }}
-            className="px-2 pb-2 space-y-2"
-            suppressHydrationWarning
-          >
-            <div className="relative" suppressHydrationWarning>
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-sm select-none pointer-events-none">
-                @
-              </span>
-              <SidebarInput
-                value={rawInput}
-                onChange={(e) => onRawInputChange(e.target.value)}
-                placeholder="enter a username"
-                className="pl-7 h-9"
-                autoComplete="off"
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                aria-label="Username to search"
-                name="username"
-                type="text"
-              />
-            </div>
-            <Button
-              type="submit"
-              disabled={!canSearch}
-              className="w-full h-9"
-              size="sm"
+          {/* ---- Tool-specific search bar ---- */}
+          {activeTool === "username-finder" && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (canSearch) onSubmit();
+              }}
+              className="px-2 pb-2 space-y-2"
+              suppressHydrationWarning
             >
-              {loading ? (
-                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-              ) : (
-                <Search className="h-3.5 w-3.5 mr-1.5" />
-            )}
-            {loading ? "Searching..." : "Search"}
-          </Button>
-        </form>
+              <div className="relative" suppressHydrationWarning>
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-sm select-none pointer-events-none">
+                  @
+                </span>
+                <SidebarInput
+                  value={rawInput}
+                  onChange={(e) => onRawInputChange(e.target.value)}
+                  placeholder="enter a username"
+                  className="pl-7 h-9"
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  aria-label="Username to search"
+                  name="username"
+                  type="text"
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={!canSearch}
+                className="w-full h-9"
+                size="sm"
+              >
+                {loading ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <Search className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                {loading ? "Searching..." : "Search"}
+              </Button>
+            </form>
+          )}
+
+          {activeTool === "domain-scanner" && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (canScanDomain) onDomainSubmit();
+              }}
+              className="px-2 pb-2 space-y-2"
+              suppressHydrationWarning
+            >
+              <div className="relative" suppressHydrationWarning>
+                <Globe className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground h-3.5 w-3.5 pointer-events-none" />
+                <SidebarInput
+                  value={domainInput}
+                  onChange={(e) => onDomainInputChange(e.target.value)}
+                  placeholder="example.com"
+                  className="pl-8 h-9"
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  aria-label="Domain to scan"
+                  name="domain"
+                  type="text"
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={!canScanDomain}
+                className="w-full h-9"
+                size="sm"
+              >
+                {domainLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <Search className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                {domainLoading ? "Scanning..." : "Scan"}
+              </Button>
+            </form>
+          )}
       </SidebarHeader>
 
       <SidebarSeparator />
 
       {/* ---------- Content: filters ---------- */}
       <SidebarContent>
-        {/* Status filter group */}
-        {hasResults && (
+        {/* Status filter group — Username Finder only */}
+        {activeTool === "username-finder" && hasResults && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
               Status
@@ -348,8 +408,8 @@ export function AppSidebar({
           </SidebarGroup>
         )}
 
-        {/* Category filter group */}
-        {hasResults && (
+        {/* Category filter group — Username Finder only */}
+        {activeTool === "username-finder" && hasResults && (
           <SidebarGroup>
             <SidebarGroupLabel className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
               <span className="flex items-center gap-1.5">
@@ -405,7 +465,8 @@ export function AppSidebar({
           </SidebarGroup>
         )}
 
-        {/* Legend / status color key — always visible */}
+        {/* Legend / status color key — Username Finder only */}
+        {activeTool === "username-finder" && (
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Legend
@@ -431,6 +492,35 @@ export function AppSidebar({
             </div>
           </SidebarGroupContent>
         </SidebarGroup>
+        )}
+
+        {/* Domain Scanner info — shown when domain-scanner is active */}
+        {activeTool === "domain-scanner" && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              Scan includes
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <div className="px-2 space-y-1 text-[11px] text-muted-foreground">
+                {[
+                  "DNS records (A, AAAA, MX, NS, TXT, CAA, SOA)",
+                  "WHOIS / RDAP registration data",
+                  "SSL certificate details",
+                  "Subdomain enumeration (~40 names)",
+                  "Tech stack fingerprinting",
+                  "Security headers analysis",
+                  "Wayback Machine history",
+                  "robots.txt & sitemap.xml",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-1.5">
+                    <Check className="h-3 w-3 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       {/* ---------- Footer: platform count ---------- */}

@@ -26,6 +26,7 @@ import { PLATFORMS } from "@/lib/platforms";
 import { BrandIcon, brandColor } from "@/components/brand-icon";
 import { ProfileDialog } from "./profile-dialog";
 import { AppSidebar, type StatusFilter } from "./app-sidebar";
+import { DomainScannerView } from "./domain-scanner-view";
 import type { HitStatus } from "./hit-types";
 
 interface Hit {
@@ -87,6 +88,7 @@ const STATUS_META: Record<
 };
 
 export default function Home() {
+  const [activeTool, setActiveTool] = useState("username-finder");
   const [rawInput, setRawInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResponse | null>(null);
@@ -97,6 +99,12 @@ export default function Home() {
   const [elapsed, setElapsed] = useState<number | null>(null);
   const [selectedHit, setSelectedHit] = useState<Hit | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Domain Scanner state
+  const [domainInput, setDomainInput] = useState("");
+  const [domainLoading, setDomainLoading] = useState(false);
+  const [domainScanTrigger, setDomainScanTrigger] = useState(0);
+
   const { toast } = useToast();
   const abortRef = useRef<AbortController | null>(null);
 
@@ -106,6 +114,17 @@ export default function Home() {
     if (!/^[A-Za-z0-9_.-]+$/.test(v)) return "";
     return v;
   }, [rawInput]);
+
+  const cleanedDomain = useMemo(() => {
+    let d = domainInput.trim().toLowerCase();
+    d = d.replace(/^https?:\/\//, "").split("/")[0].split(":")[0];
+    if (!d || !/^[a-z0-9.-]+$/.test(d) || !d.includes(".") || d.length > 253) {
+      return "";
+    }
+    return d;
+  }, [domainInput]);
+
+  const canScanDomain = cleanedDomain.length > 0 && !domainLoading;
 
   const canSearch = cleanedUsername.length > 0 && !loading;
 
@@ -153,6 +172,45 @@ export default function Home() {
       setLoading(false);
     }
   }, [cleanedUsername, toast]);
+
+  // --- Domain Scanner ---
+  const [domainResult, setDomainResult] = useState<unknown>(null);
+  const [domainError, setDomainError] = useState<string | null>(null);
+
+  const runDomainScan = useCallback(async () => {
+    if (!cleanedDomain) {
+      toast({
+        title: "Invalid domain",
+        description: "Enter a valid domain like example.com",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setDomainLoading(true);
+    setDomainResult(null);
+    setDomainError(null);
+
+    try {
+      const res = await fetch(
+        `/api/scan-domain?domain=${encodeURIComponent(cleanedDomain)}`,
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
+      setDomainResult(data);
+    } catch (err) {
+      setDomainError((err as Error).message);
+      toast({
+        title: "Scan failed",
+        description: (err as Error).message,
+        variant: "destructive",
+      });
+    } finally {
+      setDomainLoading(false);
+    }
+  }, [cleanedDomain, toast]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -213,6 +271,8 @@ export default function Home() {
   return (
     <SidebarProvider>
       <AppSidebar
+        activeTool={activeTool}
+        onToolChange={setActiveTool}
         rawInput={rawInput}
         onRawInputChange={setRawInput}
         onSubmit={runSearch}
@@ -226,11 +286,16 @@ export default function Home() {
         counts={counts}
         totalPlatforms={totalPlatforms}
         hasResults={!!results}
+        domainInput={domainInput}
+        onDomainInputChange={setDomainInput}
+        onDomainSubmit={runDomainScan}
+        canScanDomain={canScanDomain}
+        domainLoading={domainLoading}
       />
 
       {/* ---------- Main content area ---------- */}
       <SidebarInset>
-        {/* Top bar: trigger + title + summary */}
+        {/* Top bar: trigger + title */}
         <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b border-border/60 bg-background/95 backdrop-blur px-4">
           <SidebarTrigger>
             <PanelLeft className="h-4 w-4" />
@@ -239,20 +304,32 @@ export default function Home() {
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <Globe2 className="h-4 w-4 text-muted-foreground shrink-0" />
             <h1 className="text-sm font-semibold truncate">
-              {results ? (
+              {activeTool === "username-finder" && results && (
                 <>
                   Results for{" "}
                   <span className="font-mono text-primary">
                     @{results.username}
                   </span>
                 </>
-              ) : (
+              )}
+              {activeTool === "username-finder" && !results && (
                 "Find a username across the web"
+              )}
+              {activeTool === "domain-scanner" && domainResult && (
+                <>
+                  Scan of{" "}
+                  <span className="font-mono text-primary">
+                    {(domainResult as { domain: string }).domain}
+                  </span>
+                </>
+              )}
+              {activeTool === "domain-scanner" && !domainResult && (
+                "Domain Scanner"
               )}
             </h1>
           </div>
-          {/* Active-filter chips */}
-          {(statusFilter !== "all" || selectedCategories.size > 0) && (
+          {/* Active-filter chips — Username Finder only */}
+          {activeTool === "username-finder" && (statusFilter !== "all" || selectedCategories.size > 0) && (
             <div className="hidden sm:flex items-center gap-1.5">
               {statusFilter !== "all" && (
                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-accent text-accent-foreground capitalize">
@@ -266,49 +343,69 @@ export default function Home() {
               )}
             </div>
           )}
-          {/* Summary line (results only) */}
-          {results && (
+          {/* Summary line */}
+          {activeTool === "username-finder" && results && (
             <span className="hidden md:block text-xs text-muted-foreground font-mono ml-auto">
               {filteredResults.length} shown · {results.found} found
               {elapsed !== null && ` · ${elapsed}ms`}
               {results.cached && " · cached"}
             </span>
           )}
+          {activeTool === "domain-scanner" && domainResult && (
+            <span className="hidden md:block text-xs text-muted-foreground font-mono ml-auto">
+              {(domainResult as { durationMs: number }).durationMs}ms
+              {(domainResult as { cached: boolean }).cached && " · cached"}
+            </span>
+          )}
         </header>
 
         {/* Main scrollable area */}
         <main className="flex-1 p-4 sm:p-6">
-          {/* Loading skeleton */}
-          {loading && !results && (
-            <LoadingState total={totalPlatforms} />
+          {/* ---- Username Finder view ---- */}
+          {activeTool === "username-finder" && (
+            <>
+              {/* Loading skeleton */}
+              {loading && !results && (
+                <LoadingState total={totalPlatforms} />
+              )}
+
+              {/* Empty hint */}
+              {!loading && !results && (
+                <Card className="border-dashed">
+                  <CardContent className="py-16 text-center text-muted-foreground">
+                    <Search className="h-10 w-10 mx-auto mb-4 opacity-40" />
+                    <p className="text-sm font-medium mb-1">No search yet</p>
+                    <p className="text-xs">
+                      Type any <span className="font-mono">@username</span> in the
+                      sidebar and press{" "}
+                      <span className="font-medium text-foreground">Search</span> to
+                      probe {totalPlatforms}+ social platforms in parallel.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Results grid */}
+              {results && (
+                <ResultsView
+                  results={results}
+                  filteredResults={filteredResults}
+                  loading={loading}
+                  onSelectHit={(hit) => {
+                    setSelectedHit(hit);
+                    setDialogOpen(true);
+                  }}
+                />
+              )}
+            </>
           )}
 
-          {/* Empty hint */}
-          {!loading && !results && (
-            <Card className="border-dashed">
-              <CardContent className="py-16 text-center text-muted-foreground">
-                <Search className="h-10 w-10 mx-auto mb-4 opacity-40" />
-                <p className="text-sm font-medium mb-1">No search yet</p>
-                <p className="text-xs">
-                  Type any <span className="font-mono">@username</span> in the
-                  sidebar and press{" "}
-                  <span className="font-medium text-foreground">Search</span> to
-                  probe {totalPlatforms}+ social platforms in parallel.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Results grid */}
-          {results && (
-            <ResultsView
-              results={results}
-              filteredResults={filteredResults}
-              loading={loading}
-              onSelectHit={(hit) => {
-                setSelectedHit(hit);
-                setDialogOpen(true);
-              }}
+          {/* ---- Domain Scanner view ---- */}
+          {activeTool === "domain-scanner" && (
+            <DomainScannerView
+              result={domainResult as import("./domain-scanner-view").DomainScanResult | null}
+              loading={domainLoading}
+              error={domainError}
             />
           )}
         </main>
@@ -321,7 +418,9 @@ export default function Home() {
               platform&apos;s Terms of Service.
             </span>
             <span className="font-mono">
-              {totalPlatforms} platforms · responses are heuristically classified
+              {activeTool === "username-finder"
+                ? `${totalPlatforms} platforms · responses are heuristically classified`
+                : "DNS · WHOIS · SSL · subdomains · tech stack · security headers"}
             </span>
           </div>
         </footer>

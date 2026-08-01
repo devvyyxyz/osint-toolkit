@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useSettings, generateUserAgent } from "./settings-context";
+import { useTheme } from "next-themes";
 
 interface SettingsViewProps {
   onBack: () => void;
@@ -36,6 +37,7 @@ interface SettingsViewProps {
 
 export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
   const { settings, updateSettings, resetSettings, resetOnboarding } = useSettings();
+  const { theme, setTheme } = useTheme();
 
   // Local state so changes are explicit (user clicks Save)
   const [hibpApiKey, setHibpApiKey] = React.useState(settings.hibpApiKey);
@@ -342,11 +344,44 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
 
         {/* ---- Appearance ---- */}
         {activeSection === "appearance" && (
-          <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
-            <Palette className="h-8 w-8 mb-3 opacity-30" />
-            <p className="text-sm font-medium mb-1">Coming Soon</p>
-            <p className="text-xs">Theme, font size, and density options will be available here.</p>
-          </div>
+          <Card>
+            <CardContent className="p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <Palette className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-sm font-semibold">Appearance</h2>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs">Theme</Label>
+                  <div className="flex gap-2 mt-1.5">
+                    {[
+                      { value: "light", label: "Light" },
+                      { value: "dark", label: "Dark" },
+                      { value: "system", label: "System" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setTheme(opt.value as "light" | "dark" | "system")}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                          theme === opt.value
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1.5">
+                    Choose your preferred color scheme. System follows your OS setting.
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-md border border-border/40 p-3 text-[11px] text-muted-foreground">
+                More appearance options (font size, density, accent color) coming soon.
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* ---- Notifications ---- */}

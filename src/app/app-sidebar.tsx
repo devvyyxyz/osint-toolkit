@@ -502,7 +502,6 @@ export function AppSidebar(props: AppSidebarProps) {
                                   />
                                 </span>
                               )}
-                              {isActive && tool.enabled && <Check className="h-3 w-3 shrink-0" />}
                             </button>
                           </TooltipTrigger>
                           <TooltipContent side="right" className="max-w-[200px] text-xs">

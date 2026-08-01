@@ -42,15 +42,11 @@ export function SettingsSidebar({
 }: SettingsSidebarProps) {
   return (
     <div className="w-64 shrink-0 flex flex-col h-full border-r border-border/60 bg-background overflow-hidden">
-      {/* Header */}
-      <div className="shrink-0">
-        <div className="flex items-center gap-2 px-3 py-2">
-          <SettingsIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-          <span className="font-semibold text-sm flex-1">Settings</span>
-        </div>
+      {/* Header bar — matches left panel style */}
+      <div className="shrink-0 flex items-center gap-2 h-14 px-3 border-b border-border/60">
+        <SettingsIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+        <span className="font-semibold text-sm flex-1">Settings</span>
       </div>
-
-      <div className="border-t border-border/60" />
 
       {/* Settings sections */}
       <div className="flex-1 overflow-y-auto py-2 px-1">

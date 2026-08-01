@@ -353,12 +353,14 @@ export function AppSidebar(props: AppSidebarProps) {
   return (
     <div className="w-64 shrink-0 flex flex-col h-full border-r border-border/60 bg-background overflow-hidden">
       <TooltipProvider delayDuration={300}>
-        {/* ---------- Header: title + search ---------- */}
+        {/* ---------- Header bar — matches left panel style ---------- */}
+        <div className="shrink-0 flex items-center gap-2 h-14 px-3 border-b border-border/60">
+          <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+          <span className="font-semibold text-sm flex-1">Tools</span>
+        </div>
+
+        {/* ---------- Search area ---------- */}
         <div className="shrink-0">
-          <div className="flex items-center gap-2 px-3 py-2">
-            <Globe2 className="h-4 w-4 text-muted-foreground shrink-0" />
-            <span className="font-semibold text-sm flex-1">Search</span>
-          </div>
 
           {/* Tool-specific search bar */}
           {activeTool === "username-finder" && (
@@ -429,8 +431,6 @@ export function AppSidebar(props: AppSidebarProps) {
 
           {activeTool === "breach-checker" && (
             <div className="px-2 pb-2 space-y-2">
-              {/* Mode dropdown */}
-              <ModeDropdown mode={breachMode} onModeChange={onBreachModeChange} />
               {/* Account mode: email/username input */}
               {breachMode === "account" && (
                 <form
@@ -469,8 +469,6 @@ export function AppSidebar(props: AppSidebarProps) {
             </div>
           )}
         </div>
-
-        <div className="border-t border-border/60" />
 
         {/* ---------- Scrollable: Starred + Tools ---------- */}
         <div className="flex-1 overflow-y-auto">
@@ -592,6 +590,34 @@ export function AppSidebar(props: AppSidebarProps) {
                       );
                     })}
                   </div>
+
+                  {/* Breach Checker mode sub-items — shown when breach-checker is active */}
+                  {activeTool === "breach-checker" && group.label === "Security" && (
+                    <div className="ml-4 mt-0.5 mb-1 space-y-0.5 border-l border-border/40 pl-2">
+                      <button
+                        onClick={() => onBreachModeChange("account")}
+                        className={`w-full flex items-center gap-2 px-2 py-1 rounded-md text-[11px] transition-colors ${
+                          breachMode === "account"
+                            ? "bg-accent text-accent-foreground font-medium"
+                            : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                        }`}
+                      >
+                        <ShieldCheck className="h-3 w-3 shrink-0" />
+                        <span>Account Check</span>
+                      </button>
+                      <button
+                        onClick={() => onBreachModeChange("password")}
+                        className={`w-full flex items-center gap-2 px-2 py-1 rounded-md text-[11px] transition-colors ${
+                          breachMode === "password"
+                            ? "bg-accent text-accent-foreground font-medium"
+                            : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                        }`}
+                      >
+                        <Key className="h-3 w-3 shrink-0" />
+                        <span>Password Check</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

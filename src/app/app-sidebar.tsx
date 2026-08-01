@@ -204,6 +204,66 @@ function CollapsibleSection({
 }
 
 /* ------------------------------------------------------------------ */
+/*  Mode dropdown — for tools with multiple modes (e.g. Breach Checker) */
+/* ------------------------------------------------------------------ */
+
+function ModeDropdown({
+  mode,
+  onModeChange,
+}: {
+  mode: "account" | "password";
+  onModeChange: (m: "account" | "password") => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const modes = [
+    { id: "account" as const, label: "Account Check", icon: ShieldCheck },
+    { id: "password" as const, label: "Password Check", icon: Key },
+  ];
+  const current = modes.find((m) => m.id === mode)!;
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md border border-border/60 bg-background text-xs hover:bg-accent/50 transition-colors"
+      >
+        <span className="flex items-center gap-1.5">
+          <current.icon className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="font-medium">{current.label}</span>
+        </span>
+        <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-background border border-border/60 rounded-md shadow-lg py-0.5">
+            {modes.map((m) => {
+              const Icon = m.icon;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => {
+                    onModeChange(m.id);
+                    setOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs hover:bg-accent transition-colors ${
+                    m.id === mode ? "bg-accent/50 font-medium" : ""
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>{m.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Props                                                              */
 /* ------------------------------------------------------------------ */
 
@@ -243,6 +303,9 @@ export interface AppSidebarProps {
   /** Set of tool IDs that are starred by the user */
   starredTools: Set<string>;
   onToggleStar: (toolId: string) => void;
+  /** Breach Checker mode */
+  breachMode: "account" | "password";
+  onBreachModeChange: (m: "account" | "password") => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -277,6 +340,8 @@ export function AppSidebar(props: AppSidebarProps) {
     breachLoading,
     starredTools,
     onToggleStar,
+    breachMode,
+    onBreachModeChange,
   } = props;
 
   const categories = React.useMemo(() => {
@@ -363,32 +428,45 @@ export function AppSidebar(props: AppSidebarProps) {
           )}
 
           {activeTool === "breach-checker" && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (canCheckBreach) onBreachSubmit();
-              }}
-              className="px-2 pb-2 space-y-2"
-              suppressHydrationWarning
-            >
-              <Input
-                value={breachInput}
-                onChange={(e) => onBreachInputChange(e.target.value)}
-                placeholder="email or username"
-                className="h-9"
-                autoComplete="off"
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                aria-label="Email or username to check"
-                name="breach-query"
-                type="text"
-              />
-              <Button type="submit" disabled={!canCheckBreach} className="w-full h-9" size="sm">
-                {breachLoading ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />}
-                {breachLoading ? "Checking..." : "Check"}
-              </Button>
-            </form>
+            <div className="px-2 pb-2 space-y-2">
+              {/* Mode dropdown */}
+              <ModeDropdown mode={breachMode} onModeChange={onBreachModeChange} />
+              {/* Account mode: email/username input */}
+              {breachMode === "account" && (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (canCheckBreach) onBreachSubmit();
+                  }}
+                  className="space-y-2"
+                  suppressHydrationWarning
+                >
+                  <Input
+                    value={breachInput}
+                    onChange={(e) => onBreachInputChange(e.target.value)}
+                    placeholder="email or username"
+                    className="h-9"
+                    autoComplete="off"
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    aria-label="Email or username to check"
+                    name="breach-query"
+                    type="text"
+                  />
+                  <Button type="submit" disabled={!canCheckBreach} className="w-full h-9" size="sm">
+                    {breachLoading ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />}
+                    {breachLoading ? "Checking..." : "Check"}
+                  </Button>
+                </form>
+              )}
+              {/* Password mode: just a hint, the password input is on the page */}
+              {breachMode === "password" && (
+                <div className="text-[11px] text-muted-foreground px-1 py-1">
+                  Enter a password in the main area to check.
+                </div>
+              )}
+            </div>
           )}
         </div>
 

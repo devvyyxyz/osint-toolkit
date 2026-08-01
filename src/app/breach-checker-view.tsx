@@ -102,9 +102,6 @@ export function BreachCheckerView({
 }) {
   return (
     <div className="space-y-4">
-      {/* Mode selector dropdown */}
-      <ModeSelector mode={mode} onModeChange={onModeChange} />
-
       {/* ---- Account breach check ---- */}
       {mode === "account" && (
         <>

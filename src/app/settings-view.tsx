@@ -424,20 +424,22 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
         )}
       </div>
 
-      {/* Save bar */}
-      <div className="sticky bottom-4 flex justify-end">
-        <Card className="shadow-lg">
-          <CardContent className="p-3 flex items-center gap-3">
-            <span className="text-xs text-muted-foreground hidden sm:block">
-              Changes are saved to your browser
-            </span>
-            <Button onClick={handleSave} size="sm">
-              <Check className="h-3.5 w-3.5 mr-1.5" />
-              Save Settings
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Save bar — only on sections with editable options */}
+      {["api-keys", "caching", "probing", "privacy", "danger"].includes(activeSection) && (
+        <div className="sticky bottom-4 flex justify-end">
+          <Card className="shadow-lg">
+            <CardContent className="p-3 flex items-center gap-3">
+              <span className="text-xs text-muted-foreground hidden sm:block">
+                Changes are saved to your browser
+              </span>
+              <Button onClick={handleSave} size="sm">
+                <Check className="h-3.5 w-3.5 mr-1.5" />
+                Save Settings
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

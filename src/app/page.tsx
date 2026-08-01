@@ -14,6 +14,12 @@ import {
   Info,
   Settings as SettingsIcon,
   LayoutGrid,
+  Wrench,
+  Database,
+  Clock,
+  Newspaper,
+  Activity,
+  Star,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -442,6 +448,8 @@ function HomeContent() {
           breachLoading={breachLoading}
           starredTools={starredTools}
           onToggleStar={toggleStar}
+          breachMode={breachMode}
+          onBreachModeChange={setBreachMode}
         />
       )}
 
@@ -488,13 +496,7 @@ function HomeContent() {
 
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
           {activeSection === "overview" ? (
-            <Card className="border-dashed">
-              <CardContent className="py-20 text-center text-muted-foreground">
-                <LayoutGrid className="h-10 w-10 mx-auto mb-4 opacity-40" />
-                <p className="text-sm font-medium mb-1">Overview</p>
-                <p className="text-xs">This section is empty for now.</p>
-              </CardContent>
-            </Card>
+            <OverviewPage />
           ) : showSettings ? (
             <SettingsView onBack={() => setShowSettings(false)} activeSection={activeSettingsSection} />
           ) : (
@@ -503,16 +505,14 @@ function HomeContent() {
                 <>
                   {loading && !results && <LoadingState total={totalPlatforms} />}
                   {!loading && !results && (
-                    <Card className="border-dashed">
-                      <CardContent className="py-16 text-center text-muted-foreground">
-                        <Search className="h-10 w-10 mx-auto mb-4 opacity-40" />
-                        <p className="text-sm font-medium mb-1">No search yet</p>
-                        <p className="text-xs">
-                          Type any <span className="font-mono">@username</span> in the sidebar and press{" "}
-                          <span className="font-medium text-foreground">Search</span>.
-                        </p>
-                      </CardContent>
-                    </Card>
+                    <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
+                      <Search className="h-10 w-10 mb-4 opacity-30" />
+                      <p className="text-sm font-medium mb-1">No search yet</p>
+                      <p className="text-xs">
+                        Type any <span className="font-mono">@username</span> in the sidebar and press{" "}
+                        <span className="font-medium text-foreground">Search</span>.
+                      </p>
+                    </div>
                   )}
                   {results && (
                     <ResultsView
@@ -544,13 +544,11 @@ function HomeContent() {
                 />
               )}
               {!["username-finder", "domain-scanner", "breach-checker"].includes(activeTool) && (
-                <Card className="border-dashed">
-                  <CardContent className="py-16 text-center text-muted-foreground">
-                    <AlertTriangle className="h-10 w-10 mx-auto mb-4 opacity-40" />
-                    <p className="text-sm font-medium mb-1">Not available</p>
-                    <p className="text-xs">{ALL_TOOLS.find((t) => t.id === activeTool)?.name} is not enabled yet.</p>
-                  </CardContent>
-                </Card>
+                <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground">
+                  <AlertTriangle className="h-10 w-10 mb-4 opacity-30" />
+                  <p className="text-sm font-medium mb-1">Not available</p>
+                  <p className="text-xs">{ALL_TOOLS.find((t) => t.id === activeTool)?.name} is not enabled yet.</p>
+                </div>
               )}
             </>
           )}
@@ -816,6 +814,100 @@ function ToolSection({
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Overview page — dashboard with scaffolded sections                 */
+/* ------------------------------------------------------------------ */
+
+function OverviewPage() {
+  return (
+    <div className="space-y-6 max-w-4xl">
+      {/* Welcome header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Welcome back. Here's what's happening with your OSINT toolkit.
+        </p>
+      </div>
+
+      {/* Quick stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="Platforms" value="102" icon={<Globe2 className="h-4 w-4" />} />
+        <StatCard label="Tools Available" value="3" icon={<Wrench className="h-4 w-4" />} />
+        <StatCard label="APIs Connected" value="3" icon={<Database className="h-4 w-4" />} />
+        <StatCard label="Cache TTL" value="5 min" icon={<Clock className="h-4 w-4" />} />
+      </div>
+
+      {/* Latest News */}
+      <OverviewSection title="Latest News" icon={<Newspaper className="h-4 w-4" />}>
+        <div className="py-8 text-center text-muted-foreground">
+          <p className="text-xs">No news items yet.</p>
+        </div>
+      </OverviewSection>
+
+      {/* Recent Activity */}
+      <OverviewSection title="Recent Activity" icon={<Activity className="h-4 w-4" />}>
+        <div className="py-8 text-center text-muted-foreground">
+          <p className="text-xs">Your recent searches and scans will appear here.</p>
+        </div>
+      </OverviewSection>
+
+      {/* Tools */}
+      <OverviewSection title="Tools" icon={<Wrench className="h-4 w-4" />}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {ALL_TOOLS.filter((t) => t.enabled).map((tool) => {
+            const Icon = tool.icon;
+            return (
+              <div
+                key={tool.id}
+                className="flex items-center gap-3 p-3 rounded-lg border border-border/60 bg-muted/20 hover:bg-muted/40 transition-colors"
+              >
+                <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-sm font-medium truncate">{tool.name}</div>
+                  <div className="text-[10px] text-muted-foreground truncate">{tool.description}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </OverviewSection>
+
+      {/* Favorites */}
+      <OverviewSection title="Favorites" icon={<Star className="h-4 w-4" />}>
+        <div className="py-8 text-center text-muted-foreground">
+          <p className="text-xs">Star tools in the sidebar to pin them here.</p>
+        </div>
+      </OverviewSection>
+    </div>
+  );
+}
+
+function StatCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+        {icon}
+        {label}
+      </div>
+      <div className="text-xl font-bold">{value}</div>
+    </div>
+  );
+}
+
+function OverviewSection({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-muted-foreground">{icon}</span>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{title}</h2>
+      </div>
+      <div className="rounded-lg border border-border/40 bg-background">
+        {children}
+      </div>
     </div>
   );
 }

@@ -27,7 +27,8 @@ import {
 } from "@/lib/features";
 import { PLATFORMS } from "@/lib/platforms";
 import { ProfileDialog } from "./profile-dialog";
-import { AppSidebar, type StatusFilter } from "./app-sidebar"; import { ALL_TOOLS } from "./tool-registry";
+import { AppSidebar, type StatusFilter } from "./app-sidebar";
+import { ALL_TOOLS } from "./tool-registry";
 import { DomainScannerView } from "./domain-scanner-view";
 import { LandingPage } from "./landing-page";
 import { BreachCheckerView } from "./breach-checker";

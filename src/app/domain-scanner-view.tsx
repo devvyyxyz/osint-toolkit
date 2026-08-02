@@ -24,108 +24,20 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-
-/* ------------------------------------------------------------------ */
-/*  Types — mirrors the API response                                   */
-/* ------------------------------------------------------------------ */
-
-interface DnsRecords {
-  A: string[];
-  AAAA: string[];
-  MX: string[];
-  NS: string[];
-  TXT: string[];
-  CNAME: string[];
-  CAA: string[];
-  SOA: string[];
-}
-
-interface SslCertInfo {
-  valid: boolean;
-  validFrom: string | null;
-  validTo: string | null;
-  daysUntilExpiry: number | null;
-  issuer: string | null;
-  subject: string | null;
-  subjectAltNames: string[];
-  serialNumber: string | null;
-  fingerprint: string | null;
-  error?: string;
-}
-
-interface RdapResponse {
-  found: boolean;
-  domainName: string | null;
-  registrar: string | null;
-  status: string[];
-  nameservers: string[];
-  events: Array<{ eventAction: string; eventDate: string }>;
-  error?: string;
-}
-
-interface SubdomainResult {
-  subdomain: string;
-  ips: string[];
-  type: string;
-}
-
-interface TechStackItem {
-  name: string;
-  category: string;
-  confidence: string;
-}
-
-interface SecurityHeaders {
-  score: number;
-  headers: Array<{
-    name: string;
-    present: boolean;
-    value: string | null;
-    severity: string;
-    description: string;
-  }>;
-}
-
-interface WaybackInfo {
-  totalSnapshots: number | null;
-  firstSnapshot: string | null;
-  lastSnapshot: string | null;
-  error?: string;
-}
-
-interface HttpProbe {
-  url: string;
-  finalUrl: string;
-  statusCode: number | null;
-  redirected: boolean;
-  redirectChain: string[];
-  server: string | null;
-  poweredBy: string | null;
-  contentType: string | null;
-  title: string | null;
-  bodySize: number;
-  error?: string;
-}
-
-interface DomainScanResult {
-  domain: string;
-  fetchedAt: string;
-  durationMs: number;
-  dns: DnsRecords;
-  rdap: RdapResponse;
-  ssl: SslCertInfo;
-  subdomains: SubdomainResult[];
-  techStack: TechStackItem[];
-  securityHeaders: SecurityHeaders;
-  wayback: WaybackInfo;
-  httpProbe: HttpProbe;
-  robotsTxt: string | null;
-  sitemapXml: string | null;
-  cached: boolean;
-  error?: string;
-}
+import type {
+  DnsRecords,
+  SslCertInfo,
+  RdapResponse,
+  SubdomainResult,
+  TechStackItem,
+  SecurityHeaders,
+  WaybackInfo,
+  HttpProbe,
+  DomainScanResult,
+} from "@/lib/domain-scanner";
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
@@ -707,6 +619,3 @@ function formatDate(iso: string | undefined): string | null {
   }
 }
 
-/* Button import — needed for the "Visit site" and Wayback links.
-   We import here to keep the top of the file cleaner. */
-import { Button } from "@/components/ui/button";

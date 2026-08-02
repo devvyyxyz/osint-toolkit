@@ -1,0 +1,115 @@
+/**
+ * Messaging and privacy platform definitions.
+ */
+
+import type { Platform } from "../types";
+import { basicDetect, looksLikeProfile } from "../helpers";
+
+export const MESSAGING_PLATFORMS: Platform[] = [
+  {
+    id: "telegram",
+    name: "Telegram",
+    category: "Messaging",
+    iconSlug: "telegram",
+    color: "26A5E4",
+    url: (u) => `https://t.me/${u}`,
+    detect: ({ status, body }) => {
+      if (status === 404) return "not_found";
+      if (status >= 200 && status < 300) {
+        if (/if this is your/i.test(body)) return "not_found";
+        return looksLikeProfile(body, /<meta property="og:title"/i);
+      }
+      return "unknown";
+    },
+  },
+  {
+    id: "whatsapp",
+    name: "WhatsApp (wa.me)",
+    category: "Messaging",
+    iconSlug: "whatsapp",
+    color: "25D366",
+    // WhatsApp uses phone numbers — wa.me/{number} deep link.
+    url: (u) => `https://wa.me/${u}`,
+    detect: ({ status }) => {
+      if (status >= 200 && status < 400) return "found";
+      if (status === 404) return "not_found";
+      return "unknown";
+    },
+  },
+  {
+    id: "discord",
+    name: "Discord (lookup",
+    category: "Messaging",
+    iconSlug: "discord",
+    color: "5865F2",
+    // Discord doesn't expose public profile pages by username — best we can
+    // do is a lookup tool. Mark as 'unknown' on any non-404 response so the
+    // user can click through to verify manually.
+    url: (u) => `https://discordlookup.com/user/${u}`,
+    detect: ({ status }) => {
+      if (status === 404) return "not_found";
+      if (status >= 200 && status < 300) return "found";
+      return "unknown";
+    },
+  },
+  {
+    id: "signal",
+    name: "Signal",
+    category: "Messaging",
+    iconSlug: "signal",
+    color: "3A76F0",
+    // Signal usernames look like 'user.123' and resolve via the
+    // official sgnl:// link. Web fallback doesn't show a profile,
+    // so we always return 'unknown' and let the user click through.
+    url: (u) => `https://signal.me/#eu/${u}`,
+    detect: () => "unknown",
+  },
+  {
+    id: "wire",
+    name: "Wire",
+    category: "Messaging",
+    iconSlug: "wire",
+    color: "000000",
+    url: (u) => `https://wire.com/@${u}`,
+    detect: ({ status }) => basicDetect(status, ""),
+  },
+  {
+    id: "threema",
+    name: "Threema",
+    category: "Messaging",
+    iconSlug: "threema",
+    color: "323232",
+    url: (u) => `https://threema.id/${u}`,
+    detect: ({ status }) => basicDetect(status, ""),
+  },
+  {
+    id: "session",
+    name: "Session",
+    category: "Privacy",
+    iconSlug: "session",
+    color: "3362FF",
+    // Session IDs are long hex strings; we expose a placeholder URL
+    // that the user can replace. The check itself is unknown.
+    url: () => `https://getsession.org/`,
+    detect: () => "unknown",
+  },
+  {
+    id: "matrix",
+    name: "Matrix",
+    category: "Messaging",
+    iconSlug: "matrix",
+    color: "000000",
+    url: (u) => `https://matrix.to/#/@${u}:matrix.org`,
+    detect: () => "unknown",
+  },
+  {
+    id: "slack",
+    name: "Slack (community)",
+    category: "Messaging",
+    iconSlug: "slack",
+    color: "4A154B",
+    url: (u) => `https://${u}.slack.com`,
+    detect: ({ status, body }) =>
+      basicDetect(status, body, /workspace not found/i),
+  },
+];

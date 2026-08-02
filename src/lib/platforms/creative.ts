@@ -1,0 +1,108 @@
+/**
+ * Creative, art, and photography platform definitions.
+ */
+
+import type { Platform } from "../types";
+import { basicDetect } from "../helpers";
+
+export const CREATIVE_PLATFORMS: Platform[] = [
+  {
+    id: "pinterest",
+    name: "Pinterest",
+    category: "Creative",
+    iconSlug: "pinterest",
+    color: "E60023",
+    url: (u) => `https://www.pinterest.com/${u}/`,
+    detect: ({ status }) => basicDetect(status, ""),
+  },
+  {
+    id: "behance",
+    name: "Behance",
+    category: "Creative",
+    iconSlug: "behance",
+    color: "1769FF",
+    url: (u) => `https://www.behance.net/${u}`,
+    detect: ({ status }) => basicDetect(status, ""),
+  },
+  {
+    id: "dribbble",
+    name: "Dribbble",
+    category: "Creative",
+    iconSlug: "dribbble",
+    color: "EA4C89",
+    url: (u) => `https://dribbble.com/${u}`,
+    detect: ({ status }) => basicDetect(status, ""),
+  },
+  {
+    id: "deviantart",
+    name: "DeviantArt",
+    category: "Creative",
+    iconSlug: "deviantart",
+    color: "05CC47",
+    url: (u) => `https://www.deviantart.com/${u}`,
+    detect: ({ status, body }) => basicDetect(status, body, /Page not found/i),
+  },
+  {
+    id: "patreon",
+    name: "Patreon",
+    category: "Creative",
+    iconSlug: "patreon",
+    color: "F96854",
+    url: (u) => `https://www.patreon.com/${u}`,
+    detect: ({ status }) => basicDetect(status, ""),
+  },
+  {
+    id: "pixiv",
+    name: "Pixiv",
+    category: "Creative",
+    iconSlug: "pixiv",
+    color: "0096FA",
+    url: (u) => `https://www.pixiv.net/en/users/${u}`,
+    detect: ({ status }) => basicDetect(status, ""),
+  },
+  {
+    id: "artstation",
+    name: "ArtStation",
+    category: "Creative",
+    iconSlug: "artstation",
+    color: "13AFF0",
+    url: (u) => `https://www.artstation.com/${u}`,
+    detect: ({ status }) => basicDetect(status, ""),
+  },
+  {
+    id: "flickr",
+    name: "Flickr",
+    category: "Photo",
+    iconSlug: "flickr",
+    color: "0063DC",
+    url: (u) => `https://www.flickr.com/people/${u}`,
+    detect: ({ status }) => basicDetect(status, ""),
+  },
+  {
+    id: "unsplash",
+    name: "Unsplash",
+    category: "Photo",
+    iconSlug: "unsplash",
+    color: "000000",
+    url: (u) => `https://unsplash.com/@${u}`,
+    detect: ({ status }) => basicDetect(status, ""),
+  },
+  {
+    id: "imgur",
+    name: "Imgur",
+    category: "Photo",
+    iconSlug: "imgur",
+    color: "1BB76E",
+    url: (u) => `https://imgur.com/user/${u}`,
+    detect: ({ status }) => basicDetect(status, ""),
+  },
+  {
+    id: "fivehundredpx",
+    name: "500px",
+    category: "Photo",
+    iconSlug: "fivehundredpx",
+    color: "0099E5",
+    url: (u) => `https://500px.com/${u}`,
+    detect: ({ status }) => basicDetect(status, ""),
+  },
+];

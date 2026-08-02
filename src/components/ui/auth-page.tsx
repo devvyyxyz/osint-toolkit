@@ -23,7 +23,7 @@ export function AuthPage() {
       <div className="bg-muted/60 relative hidden h-full flex-col border-r p-10 lg:flex">
         <div className="from-background absolute inset-0 z-10 bg-gradient-to-t to-transparent" />
         <div className="z-10 flex items-center gap-2">
-          <Grid2x2Plus className="size-6" />
+          <img src="/logo.svg" alt="OSINT Toolkit" className="size-8" />
           <p className="text-xl font-semibold">OSINT Toolkit</p>
         </div>
         <div className="z-10 mt-auto">
@@ -55,7 +55,7 @@ export function AuthPage() {
         </Button>
         <div className="mx-auto space-y-4 sm:w-sm">
           <div className="flex items-center gap-2 lg:hidden">
-            <Grid2x2Plus className="size-6" />
+            <img src="/logo.svg" alt="OSINT Toolkit" className="size-8" />
             <p className="text-xl font-semibold">OSINT Toolkit</p>
           </div>
           <div className="flex flex-col space-y-1">

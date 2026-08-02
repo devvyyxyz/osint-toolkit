@@ -1,6 +1,5 @@
 "use client";
 
-import { generateId } from "@/lib/utils/uuid";
 import * as React from "react";
 
 /* ------------------------------------------------------------------ */
@@ -63,7 +62,7 @@ export function useSearchHistory() {
     (entry: Omit<HistoryEntry, "id" | "timestamp">) => {
       const full: HistoryEntry = {
         ...entry,
-        id: generateId(),
+        id: crypto.randomUUID(),
         timestamp: Date.now(),
       };
       setHistory((prev) => {

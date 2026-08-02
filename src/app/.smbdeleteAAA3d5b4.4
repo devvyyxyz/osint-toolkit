@@ -1,6 +1,5 @@
 "use client";
 
-import { generateId } from "@/lib/utils/uuid";
 import * as React from "react";
 
 /* ------------------------------------------------------------------ */
@@ -72,7 +71,7 @@ export function generateUserAgent(): string {
 
 /** Generate a random session ID (for anonymous identification) */
 export function generateSessionId(): string {
-  return generateId();
+  return crypto.randomUUID();
 }
 
 function loadSettings(): Settings {

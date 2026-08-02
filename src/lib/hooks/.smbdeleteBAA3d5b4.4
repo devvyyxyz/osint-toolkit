@@ -1,6 +1,5 @@
 "use client";
 
-import { generateId } from "@/lib/utils/uuid";
 import * as React from "react";
 
 /* ------------------------------------------------------------------ */
@@ -64,7 +63,7 @@ export function useWatchlist() {
     (item: Omit<WatchlistItem, "id" | "addedAt">) => {
       const full: WatchlistItem = {
         ...item,
-        id: generateId(),
+        id: crypto.randomUUID(),
         addedAt: Date.now(),
       };
       setItems((prev) => {

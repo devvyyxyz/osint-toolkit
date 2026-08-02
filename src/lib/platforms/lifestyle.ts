@@ -3,7 +3,7 @@
  */
 
 import type { Platform } from "../types";
-import { basicDetect } from "../helpers";
+import { basicDetect } from "./helpers";
 
 export const LIFESTYLE_PLATFORMS: Platform[] = [
   /* ============== Dating ============== */

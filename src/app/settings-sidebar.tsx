@@ -30,7 +30,6 @@ const SETTINGS_SECTIONS = [
   { id: "privacy", label: "Privacy", icon: Lock },
   { id: "appearance", label: "Appearance", icon: Palette },
   { id: "notifications", label: "Notifications", icon: Bell },
-  { id: "account", label: "Account", icon: User },
   { id: "data", label: "Data Management", icon: Database },
   { id: "about", label: "About", icon: Info },
   { id: "danger", label: "Danger Zone", icon: AlertTriangle },

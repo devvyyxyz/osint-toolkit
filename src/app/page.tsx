@@ -55,6 +55,7 @@ import {
   WatchlistPage,
   FavoritesPage,
   NewsPage,
+  AccountPage,
   type Hit,
   type SearchResponse,
 } from "./views";
@@ -639,6 +640,10 @@ function HomeContent() {
           ) : activeSection === "news" ? (
             <ErrorBoundary>
             <NewsPage />
+            </ErrorBoundary>
+          ) : activeSection === "account" ? (
+            <ErrorBoundary>
+            <AccountPage />
             </ErrorBoundary>
           ) : showSettings ? (
             <SettingsView onBack={() => setShowSettings(false)} activeSection={activeSettingsSection} />

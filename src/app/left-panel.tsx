@@ -10,11 +10,12 @@ import {
   Settings as SettingsIcon,
   Home,
   X,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ALL_TOOLS } from "./tool-registry";
 
-export type DashboardSection = "tools" | "overview" | "watchlist" | "favorites" | "news";
+export type DashboardSection = "tools" | "overview" | "watchlist" | "favorites" | "news" | "account";
 
 export function LeftPanel({
   activeSection,
@@ -37,6 +38,7 @@ export function LeftPanel({
     { id: "watchlist", label: "Watchlist", icon: Eye },
     { id: "favorites", label: "Favorites", icon: Star },
     { id: "news", label: "News", icon: Newspaper },
+    { id: "account", label: "Account", icon: User },
   ];
 
   return (

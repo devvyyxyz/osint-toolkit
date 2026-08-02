@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSettings } from "./settings-context";
+import { useSettings } from "../settings-context";
 import { WelcomeStep } from "./welcome-step";
 import { ApiKeysStep } from "./api-keys-step";
 import { PreferencesStep } from "./preferences-step";

@@ -15,22 +15,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { ALL_TOOLS } from "./tool-registry";
 
-export type DashboardSection = "tools" | "overview" | "watchlist" | "favorites" | "news" | "account";
+export type DashboardSection = "tools" | "overview" | "watchlist" | "favorites" | "news" | "account" | "settings";
 
 export function LeftPanel({
   activeSection,
   onSectionChange,
   onGoHome,
-  onOpenSettings,
-  showSettings,
-  onCloseSettings,
 }: {
   activeSection: DashboardSection;
   onSectionChange: (section: DashboardSection) => void;
   onGoHome: () => void;
-  onOpenSettings: () => void;
-  showSettings: boolean;
-  onCloseSettings: () => void;
 }) {
   const sections: { id: DashboardSection; label: string; icon: typeof LayoutGrid }[] = [
     { id: "overview", label: "Overview", icon: LayoutGrid },
@@ -39,6 +33,7 @@ export function LeftPanel({
     { id: "favorites", label: "Favorites", icon: Star },
     { id: "news", label: "News", icon: Newspaper },
     { id: "account", label: "Account", icon: User },
+    { id: "settings", label: "Settings", icon: SettingsIcon },
   ];
 
   return (
@@ -61,16 +56,13 @@ export function LeftPanel({
         <div className="space-y-1 px-2">
           {sections.map((section) => {
             const Icon = section.icon;
-            const isActive = activeSection === section.id && !showSettings;
+            const isActive = activeSection === section.id;
             return (
               <Button
                 key={section.id}
                 variant="ghost"
                 size="icon"
-                onClick={() => {
-                  onSectionChange(section.id);
-                  onCloseSettings();
-                }}
+                onClick={() => onSectionChange(section.id)}
                 className={`w-full h-10 relative ${
                   isActive
                     ? "bg-accent text-accent-foreground"
@@ -89,26 +81,7 @@ export function LeftPanel({
         </div>
       </div>
 
-      {/* Bottom: Settings */}
-      <div className="shrink-0 border-t border-border/60 p-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={showSettings ? onCloseSettings : onOpenSettings}
-          className={`w-full h-10 relative ${
-            showSettings
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-          aria-label="Settings"
-          title="Settings"
-        >
-          <SettingsIcon className="h-4 w-4" />
-          {showSettings && (
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-primary rounded-r" />
-          )}
-        </Button>
-      </div>
+
     </div>
   );
 }

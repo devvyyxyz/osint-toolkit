@@ -75,7 +75,6 @@ function HomeContent() {
   const { items: watchlist, addItem: addWatch, removeItem: removeWatch, updateItem: updateWatch } = useWatchlist();
   // View flow: landing → onboarding → app (with optional settings overlay)
   const [view, setView] = useState<"landing" | "app">("landing");
-  const [showSettings, setShowSettings] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<DashboardSection>("tools");
   const [activeSettingsSection, setActiveSettingsSection] = useState("api-keys");
@@ -465,7 +464,6 @@ function HomeContent() {
   // Go back to the landing page
   const goHome = useCallback(() => {
     setView("landing");
-    setShowSettings(false);
   }, []);
 
   // ---- Landing page view ----
@@ -499,13 +497,10 @@ function HomeContent() {
         activeSection={activeSection}
         onSectionChange={setActiveSection}
         onGoHome={goHome}
-        onOpenSettings={() => setShowSettings(true)}
-        showSettings={showSettings}
-        onCloseSettings={() => setShowSettings(false)}
       />
 
       {/* Tools sidebar — shown when tools section is active and settings is closed */}
-      {activeSection === "tools" && !showSettings && (
+      {activeSection === "tools" && (
         <AppSidebar
           activeTool={activeTool}
           onToolChange={setActiveTool}
@@ -543,8 +538,8 @@ function HomeContent() {
         />
       )}
 
-      {/* Settings sidebar — shown when settings is open */}
-      {showSettings && (
+      {/* Settings sidebar — shown when settings tab is active */}
+      {activeSection === "settings" && (
         <SettingsSidebar
           activeSection={activeSettingsSection}
           onSectionChange={setActiveSettingsSection}
@@ -556,12 +551,7 @@ function HomeContent() {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="shrink-0 flex h-14 items-center gap-2 border-b border-border/60 bg-background/95 backdrop-blur px-4">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            {showSettings ? (
-              <>
-                <SettingsIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-                <h1 className="text-sm font-semibold truncate">Settings</h1>
-              </>
-            ) : activeSection === "overview" ? (
+            {activeSection === "overview" ? (
               <>
                 <LayoutGrid className="h-4 w-4 text-muted-foreground shrink-0" />
                 <h1 className="text-sm font-semibold truncate">Overview</h1>
@@ -581,6 +571,11 @@ function HomeContent() {
                 <Newspaper className="h-4 w-4 text-muted-foreground shrink-0" />
                 <h1 className="text-sm font-semibold truncate">News</h1>
               </>
+            ) : activeSection === "settings" ? (
+              <>
+                <SettingsIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                <h1 className="text-sm font-semibold truncate">Settings</h1>
+              </>
             ) : (
               <>
                 {(() => {
@@ -594,7 +589,7 @@ function HomeContent() {
               </>
             )}
           </div>
-          {!showSettings && activeSection === "tools" && (
+          {activeSection === "tools" && (
             <div className="flex items-center gap-1 shrink-0">
               {/* Export button — only when results exist */}
               {((activeTool === "username-finder" && results) ||
@@ -650,8 +645,8 @@ function HomeContent() {
             <ErrorBoundary>
             <AccountPage />
             </ErrorBoundary>
-          ) : showSettings ? (
-            <SettingsView onBack={() => setShowSettings(false)} activeSection={activeSettingsSection} onDirtyChange={setSettingsDirty} registerSaveHandler={(fn) => { saveHandlerRef.current = fn; }} />
+          ) : activeSection === "settings" ? (
+            <SettingsView onBack={() => setActiveSection("tools")} activeSection={activeSettingsSection} onDirtyChange={setSettingsDirty} registerSaveHandler={(fn) => { saveHandlerRef.current = fn; }} />
           ) : (
             <>
               {activeTool === "username-finder" && (

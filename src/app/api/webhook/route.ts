@@ -106,31 +106,3 @@ export async function GET() {
     hasSecret: !!process.env.WEBHOOK_SECRET,
   });
 }
-</arg_value>
-<task_progress>- [x] Explore codebase structure and identify large/monolithic files
-- [x] Analyze key files for refactoring opportunities
-- [x] Split src/lib/features.ts into hooks + utils
-- [x] Split src/lib/platforms.ts into directory
-- [x] Split src/lib/simple-tools.ts into tools directory
-- [x] Split src/lib/api-probes.ts into directory
-- [x] Split src/app/page.tsx into views directory
-- [x] Split src/app/app-sidebar.tsx into sidebar directory
-- [x] Split src/app/breach-checker-view.tsx into sub-components
-- [x] Split src/app/domain-scanner-view.tsx - extract shared types
-- [x] Split src/app/profile-dialog.tsx into sub-components
-- [x] Split src/app/settings-view.tsx into sections
-- [x] Split src/app/onboarding.tsx into steps
-- [x] Split src/app/left-panel.tsx into sub-components
-- [x] Verify build passes after refactoring
-- [x] Fix crypto.randomUUID compatibility issue
-- [x] Add Discord login page
-- [x] Use logo.svg as site logo
-- [x] Add account section to sidebar
-- [x] Create AccountPage component
-- [x] Update views/index.ts to export AccountPage
-- [x] Fix settings in sidebar (removed duplicate account from settings)
-- [x] Add webhook configuration to .env
-- [x] Create webhook API endpoint
-- [ ] Add report button to main UI
-- [ ] Add webhooks section to settings</task_progress>
-</write_to_file></tool_call>

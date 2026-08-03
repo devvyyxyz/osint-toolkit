@@ -41,28 +41,22 @@ export function ProfileStep({
           </p>
         </div>
 
-        <div className="space-y-2">
-          <Label>How will you use OSINT Toolkit?</Label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {[
-              { value: "personal", label: "Personal", desc: "General research & curiosity" },
-              { value: "professional", label: "Professional", desc: "Security & investigations" },
-              { value: "academic", label: "Academic", desc: "Research & education" },
-            ].map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => onUsageTypeChange(opt.value)}
-                className={`text-left p-3 rounded-lg border transition-colors ${
-                  usageType === opt.value
-                    ? "border-primary bg-primary/5"
-                    : "border-border/60 hover:bg-muted/30"
-                }`}
-              >
-                <div className="text-sm font-medium">{opt.label}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">{opt.desc}</div>
-              </button>
-            ))}
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <Label className="text-xs">How will you use OSINT Toolkit?</Label>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              This helps personalize your experience
+            </p>
           </div>
+          <select
+            value={usageType}
+            onChange={(e) => onUsageTypeChange(e.target.value)}
+            className="h-8 px-2 rounded-md border border-input bg-background text-xs"
+          >
+            <option value="personal">Personal</option>
+            <option value="professional">Professional</option>
+            <option value="academic">Academic</option>
+          </select>
         </div>
       </div>
     </div>

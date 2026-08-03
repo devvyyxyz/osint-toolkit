@@ -91,7 +91,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4">
-        <div className="max-w-2xl w-full mx-auto pb-8">
+        <div key={step} className="max-w-2xl w-full mx-auto pb-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
           <StepComponent
             hibpApiKey={hibpApiKey}
             onHibpApiKeyChange={setHibpApiKey}

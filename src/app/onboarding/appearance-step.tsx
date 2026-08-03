@@ -1,6 +1,7 @@
 "use client";
 
 import { Palette, Sun, Moon, Monitor } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { useTheme } from "next-themes";
 
 export function AppearanceStep({ onNext: _onNext }: { onNext: () => void }) {
@@ -21,26 +22,22 @@ export function AppearanceStep({ onNext: _onNext }: { onNext: () => void }) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {options.map((opt) => {
-          const Icon = opt.icon;
-          const isActive = theme === opt.value;
-          return (
-            <button
-              key={opt.value}
-              onClick={() => setTheme(opt.value as "light" | "dark" | "system")}
-              className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-colors ${
-                isActive
-                  ? "border-primary bg-primary/5"
-                  : "border-border/60 hover:bg-muted/30"
-              }`}
-            >
-              <Icon className={`h-6 w-6 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
-              <div className="text-sm font-medium">{opt.label}</div>
-              <div className="text-[10px] text-muted-foreground">{opt.desc}</div>
-            </button>
-          );
-        })}
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <Label className="text-xs">Theme</Label>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            Choose your preferred color scheme
+          </p>
+        </div>
+        <select
+          value={theme}
+          onChange={(e) => setTheme(e.target.value as "light" | "dark" | "system")}
+          className="h-8 px-2 rounded-md border border-input bg-background text-xs"
+        >
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
       </div>
     </div>
   );

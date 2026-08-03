@@ -48,6 +48,7 @@ export function SettingsView({ onBack, activeSection, onDirtyChange, registerSav
   const [userAgent, setUserAgent] = React.useState(settings.userAgent);
   const [privacyMode, setPrivacyMode] = React.useState(settings.privacyMode);
   const [searchMode, setSearchMode] = React.useState(settings.searchMode);
+  const [showIcons, setShowIcons] = React.useState(settings.showIcons);
   const [showKey, setShowKey] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
 
@@ -57,7 +58,8 @@ export function SettingsView({ onBack, activeSection, onDirtyChange, registerSav
     timeout !== settings.requestTimeoutSeconds ||
     userAgent !== settings.userAgent ||
     privacyMode !== settings.privacyMode ||
-    searchMode !== settings.searchMode;
+    searchMode !== settings.searchMode ||
+    showIcons !== settings.showIcons;
 
   React.useEffect(() => {
     onDirtyChange?.(isDirty);
@@ -71,6 +73,7 @@ export function SettingsView({ onBack, activeSection, onDirtyChange, registerSav
       userAgent,
       privacyMode,
       searchMode,
+      showIcons,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -91,28 +94,12 @@ export function SettingsView({ onBack, activeSection, onDirtyChange, registerSav
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <h1 className="text-xl font-semibold flex items-center gap-2">
-          <Globe2 className="h-5 w-5 text-muted-foreground" />
-          {activeSection === "api-keys" && "API Keys"}
-          {activeSection === "caching" && "Caching"}
-          {activeSection === "probing" && "Probing"}
-          {activeSection === "privacy" && "Privacy"}
-          {activeSection === "appearance" && "Appearance"}
-          {activeSection === "notifications" && "Notifications"}
-          {activeSection === "account" && "Account"}
-          {activeSection === "data" && "Data Management"}
-          {activeSection === "about" && "About"}
-          {activeSection === "danger" && "Danger Zone"}
-        </h1>
-        {saved && (
-          <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40">
-            <Check className="h-3 w-3 mr-1" />
-            Saved
-          </Badge>
-        )}
-      </div>
+      {saved && (
+        <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40">
+          <Check className="h-3 w-3 mr-1" />
+          Saved
+        </Badge>
+      )}
 
       <div className="space-y-4 max-w-2xl">
         {activeSection === "api-keys" && (
@@ -392,34 +379,38 @@ export function SettingsView({ onBack, activeSection, onDirtyChange, registerSav
                 <h2 className="text-sm font-semibold">Appearance</h2>
               </div>
               <div className="space-y-3">
-                <div>
-                  <Label className="text-xs">Theme</Label>
-                  <div className="flex gap-2 mt-1.5">
-                    {[
-                      { value: "light", label: "Light" },
-                      { value: "dark", label: "Dark" },
-                      { value: "system", label: "System" },
-                    ].map((opt) => (
-                      <button
-                        key={opt.value}
-                        onClick={() => setTheme(opt.value as "light" | "dark" | "system")}
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                          theme === opt.value
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground hover:bg-muted/80"
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <Label className="text-xs">Theme</Label>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Choose your preferred color scheme
+                    </p>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-1.5">
-                    Choose your preferred color scheme. System follows your OS setting.
-                  </p>
+                  <select
+                    value={theme}
+                    onChange={(e) => setTheme(e.target.value as "light" | "dark" | "system")}
+                    className="h-8 px-2 rounded-md border border-input bg-background text-xs"
+                  >
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                    <option value="system">System</option>
+                  </select>
                 </div>
-              </div>
-              <div className="rounded-md border border-border/40 p-3 text-[11px] text-muted-foreground">
-                More appearance options (font size, density, accent color) coming soon.
+
+                <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/60">
+                  <div>
+                    <Label className="text-xs">Show Icons</Label>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Display icons next to tools and navigation items
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={showIcons}
+                    onChange={(e) => setShowIcons(e.target.checked)}
+                    className="h-4 w-4 rounded border-border"
+                  />
+                </div>
               </div>
             </div>
         )}
@@ -444,7 +435,11 @@ export function SettingsView({ onBack, activeSection, onDirtyChange, registerSav
                       <div className="text-sm font-medium">{item.label}</div>
                       <div className="text-[11px] text-muted-foreground">{item.desc}</div>
                     </div>
-                    <ToggleSwitch defaultOn={item.default} />
+                    <input
+                      type="checkbox"
+                      defaultChecked={item.default}
+                      className="h-4 w-4 rounded border-border mt-0.5"
+                    />
                   </div>
                 ))}
               </div>
@@ -581,15 +576,4 @@ export function SettingsView({ onBack, activeSection, onDirtyChange, registerSav
   );
 }
 
-function ToggleSwitch({ defaultOn }: { defaultOn: boolean }) {
-  const [on, setOn] = React.useState(defaultOn);
-  return (
-    <button
-      onClick={() => setOn(!on)}
-      className={`relative h-6 w-11 rounded-full transition-colors shrink-0 ${on ? "bg-primary" : "bg-muted"}`}
-      aria-label="Toggle"
-    >
-      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${on ? "translate-x-5" : "translate-x-0.5"}`} />
-    </button>
-  );
-}
+

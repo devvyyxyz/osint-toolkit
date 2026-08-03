@@ -35,6 +35,9 @@ export interface Settings {
    */
   searchMode: "parallel" | "incremental" | "steps";
 
+  /** Whether to show icons in the UI */
+  showIcons: boolean;
+
   /** Whether the user has completed onboarding */
   onboarded: boolean;
 }
@@ -58,6 +61,7 @@ export const DEFAULT_SETTINGS: Settings = {
   maxConcurrent: 0,
   privacyMode: false,
   searchMode: "parallel",
+  showIcons: true,
   onboarded: false,
 };
 

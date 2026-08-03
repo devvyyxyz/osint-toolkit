@@ -61,7 +61,7 @@ export function LeftPanel({
         <div className="space-y-1 px-2">
           {sections.map((section) => {
             const Icon = section.icon;
-            const isActive = activeSection === section.id;
+            const isActive = activeSection === section.id && !showSettings;
             return (
               <Button
                 key={section.id}
@@ -92,7 +92,7 @@ export function LeftPanel({
           variant="ghost"
           size="icon"
           onClick={showSettings ? onCloseSettings : onOpenSettings}
-          className={`w-full h-10 ${
+          className={`w-full h-10 relative ${
             showSettings
               ? "bg-accent text-accent-foreground"
               : "text-muted-foreground hover:text-foreground"

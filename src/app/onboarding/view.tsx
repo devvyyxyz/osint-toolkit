@@ -5,23 +5,40 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "../settings-context";
 import { WelcomeStep } from "./welcome-step";
+import { ProfileStep } from "./profile-step";
+import { AppearanceStep } from "./appearance-step";
 import { ApiKeysStep } from "./api-keys-step";
+import { PrivacyStep } from "./privacy-step";
 import { PreferencesStep } from "./preferences-step";
+import { NotificationsStep } from "./notifications-step";
+import { TourStep } from "./tour-step";
 import { ReadyStep } from "./ready-step";
 
-const STEPS = [WelcomeStep, ApiKeysStep, PreferencesStep, ReadyStep] as const;
+const STEPS = [
+  WelcomeStep,
+  ProfileStep,
+  AppearanceStep,
+  ApiKeysStep,
+  PrivacyStep,
+  PreferencesStep,
+  NotificationsStep,
+  TourStep,
+  ReadyStep,
+] as const;
 
 export function Onboarding({ onComplete }: { onComplete: () => void }) {
-  const { settings } = useSettings();
+  const { settings, completeOnboarding } = useSettings();
   const [step, setStep] = React.useState(0);
 
   const [hibpApiKey, setHibpApiKey] = React.useState(settings.hibpApiKey);
   const [cacheTtl, setCacheTtl] = React.useState(settings.cacheTtlMinutes);
   const [timeout, setTimeout_] = React.useState(settings.requestTimeoutSeconds);
   const [privacyMode, setPrivacyMode] = React.useState(settings.privacyMode);
+  const [displayName, setDisplayName] = React.useState("");
+  const [usageType, setUsageType] = React.useState("personal");
 
   const handleFinish = () => {
-    settings.completeOnboarding({
+    completeOnboarding({
       hibpApiKey,
       cacheTtlMinutes: cacheTtl,
       requestTimeoutSeconds: timeout,
@@ -84,6 +101,10 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
             onTimeoutChange={setTimeout_}
             privacyMode={privacyMode}
             onPrivacyModeChange={setPrivacyMode}
+            displayName={displayName}
+            onDisplayNameChange={setDisplayName}
+            usageType={usageType}
+            onUsageTypeChange={setUsageType}
             onNext={() => setStep((s) => s + 1)}
             onBack={() => setStep((s) => s - 1)}
             onComplete={handleFinish}
@@ -102,9 +123,14 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
             <ArrowLeft className="h-4 w-4 mr-1.5" />
             Back
           </Button>
-          {canGoNext && (
+          {canGoNext ? (
             <Button onClick={() => setStep((s) => s + 1)}>
               Next
+              <ArrowRight className="h-4 w-4 ml-1.5" />
+            </Button>
+          ) : (
+            <Button onClick={handleFinish}>
+              Launch OSINT Toolkit
               <ArrowRight className="h-4 w-4 ml-1.5" />
             </Button>
           )}

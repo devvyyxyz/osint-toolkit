@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Button } from "@/components/ui/button";
 import {
   Settings as SettingsIcon,
   Key,
@@ -15,12 +16,17 @@ import {
   Database,
   Info,
   Globe,
+  Check,
 } from "lucide-react";
 
 interface SettingsSidebarProps {
   /** Currently active settings section */
   activeSection: string;
   onSectionChange: (section: string) => void;
+  /** Save handler (called when Save button is clicked) */
+  onSave?: () => void;
+  /** Whether there are unsaved changes */
+  isDirty?: boolean;
 }
 
 const SETTINGS_SECTIONS = [
@@ -38,6 +44,8 @@ const SETTINGS_SECTIONS = [
 export function SettingsSidebar({
   activeSection,
   onSectionChange,
+  onSave,
+  isDirty,
 }: SettingsSidebarProps) {
   return (
     <div className="w-64 shrink-0 flex flex-col h-full border-r border-border/60 bg-background overflow-hidden">
@@ -75,9 +83,16 @@ export function SettingsSidebar({
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="shrink-0 border-t border-border/60 px-3 py-2 text-[10px] text-muted-foreground">
-        Settings are stored locally in your browser
+      {/* Footer with Save button */}
+      <div className="shrink-0 border-t border-border/60 px-3 py-2">
+        {isDirty ? (
+          <Button onClick={onSave} size="sm" className="w-full">
+            <Check className="h-3.5 w-3.5 mr-1.5" />
+            Save Settings
+          </Button>
+        ) : (
+          <p className="text-[10px] text-muted-foreground text-center">All changes saved</p>
+        )}
       </div>
     </div>
   );

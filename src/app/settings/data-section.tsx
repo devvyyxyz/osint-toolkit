@@ -1,7 +1,6 @@
 "use client";
 
 import { Database, Trash2, Download } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export function DataSection({
@@ -15,8 +14,7 @@ export function DataSection({
 }) {
   return (
     <div className="space-y-4">
-      <Card>
-        <CardContent className="p-4 space-y-3">
+        <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Database className="h-4 w-4 text-muted-foreground" />
             <h3 className="text-sm font-semibold">Data Management</h3>
@@ -35,8 +33,7 @@ export function DataSection({
               Reset All Settings
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
     </div>
   );
 }

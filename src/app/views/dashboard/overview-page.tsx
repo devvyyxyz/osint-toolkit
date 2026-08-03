@@ -9,6 +9,10 @@ import {
   Star,
   Newspaper,
   X,
+  TrendingUp,
+  Clock,
+  Target,
+  Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ALL_TOOLS } from "../../tool-registry";
@@ -25,6 +29,42 @@ export function OverviewPage({
   watchlist: Array<{ id: string; tool: string; query: string; label?: string; addedAt: number; lastChecked?: number }>;
   onRemoveWatch: (id: string) => void;
 }) {
+  // Compute usage stats from history
+  const now = Date.now();
+  const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+  const searchesThisWeek = history.filter((e) => e.timestamp >= weekAgo).length;
+
+  // Most used tool
+  const toolCounts: Record<string, number> = {};
+  for (const entry of history) {
+    toolCounts[entry.tool] = (toolCounts[entry.tool] || 0) + 1;
+  }
+  const toolRanking = Object.entries(toolCounts).sort((a, b) => b[1] - a[1]);
+  const mostUsedTool = toolRanking[0]
+    ? ALL_TOOLS.find((t) => t.id === toolRanking[0][0])
+    : null;
+
+  // Average results per search
+  const entriesWithResults = history.filter((e) => e.resultCount !== undefined);
+  const avgResults =
+    entriesWithResults.length > 0
+      ? Math.round(
+          entriesWithResults.reduce((sum, e) => sum + (e.resultCount || 0), 0) /
+            entriesWithResults.length,
+        )
+      : 0;
+
+  // Last search time
+  const lastSearch = history.length > 0 ? history[0].timestamp : null;
+  const lastSearchText = lastSearch
+    ? new Date(lastSearch).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "Never";
+
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Welcome header */}
@@ -38,10 +78,55 @@ export function OverviewPage({
       {/* Quick stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard label="Platforms" value="102" icon={<Globe2 className="h-4 w-4" />} />
-        <StatCard label="Tools Available" value="3" icon={<Wrench className="h-4 w-4" />} />
+        <StatCard label="Tools Available" value={String(ALL_TOOLS.filter((t) => t.enabled).length)} icon={<Wrench className="h-4 w-4" />} />
         <StatCard label="Searches" value={String(history.length)} icon={<Activity className="h-4 w-4" />} />
         <StatCard label="Watchlist" value={String(watchlist.length)} icon={<Eye className="h-4 w-4" />} />
       </div>
+
+      {/* Usage Stats */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Usage Stats</h2>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatCard label="This Week" value={String(searchesThisWeek)} icon={<Zap className="h-4 w-4" />} />
+          <StatCard
+            label="Top Tool"
+            value={mostUsedTool ? mostUsedTool.name.split(" ")[0] : "—"}
+            icon={<Target className="h-4 w-4" />}
+          />
+          <StatCard label="Avg Results" value={String(avgResults)} icon={<TrendingUp className="h-4 w-4" />} />
+          <StatCard label="Last Search" value={lastSearchText} icon={<Clock className="h-4 w-4" />} />
+        </div>
+      </div>
+
+      {/* Tool Usage Breakdown */}
+      {toolRanking.length > 0 && (
+        <OverviewSection title="Tool Usage" icon={<Wrench className="h-4 w-4" />}>
+          <div className="divide-y divide-border/40">
+            {toolRanking.slice(0, 5).map(([toolId, count]) => {
+              const tool = ALL_TOOLS.find((t) => t.id === toolId);
+              const Icon = tool?.icon ?? Search;
+              const pct = history.length > 0 ? Math.round((count / history.length) * 100) : 0;
+              return (
+                <div key={toolId} className="flex items-center gap-3 py-2 px-3">
+                  <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-medium">{tool?.name ?? toolId}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="w-24 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground w-8 text-right">{count}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </OverviewSection>
+      )}
 
       {/* Recent Activity (Search History) */}
       <OverviewSection title="Recent Activity" icon={<Activity className="h-4 w-4" />}>

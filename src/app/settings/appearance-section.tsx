@@ -1,7 +1,6 @@
 "use client";
 
 import { Palette } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
@@ -16,8 +15,7 @@ export function AppearanceSection({
 }) {
   return (
     <div className="space-y-4">
-      <Card>
-        <CardContent className="p-4 space-y-3">
+        <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Palette className="h-4 w-4 text-muted-foreground" />
             <h3 className="text-sm font-semibold">Theme</h3>
@@ -38,8 +36,7 @@ export function AppearanceSection({
             ))}
           </div>
           <Button onClick={onSave} size="sm">Save Appearance</Button>
-        </CardContent>
-      </Card>
+        </div>
     </div>
   );
 }

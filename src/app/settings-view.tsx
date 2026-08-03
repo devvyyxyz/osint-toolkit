@@ -23,7 +23,6 @@ import {
   Info,
   Download,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,9 +33,11 @@ import { useTheme } from "next-themes";
 interface SettingsViewProps {
   onBack: () => void;
   activeSection: string;
+  onDirtyChange?: (dirty: boolean) => void;
+  registerSaveHandler?: (handler: () => void) => void;
 }
 
-export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
+export function SettingsView({ onBack, activeSection, onDirtyChange, registerSaveHandler }: SettingsViewProps) {
   const { settings, updateSettings, resetSettings, resetOnboarding } = useSettings();
   const { theme, setTheme } = useTheme();
 
@@ -50,6 +51,18 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
   const [showKey, setShowKey] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
 
+  // Compute dirty state
+  const isDirty = hibpApiKey !== settings.hibpApiKey ||
+    cacheTtl !== settings.cacheTtlMinutes ||
+    timeout !== settings.requestTimeoutSeconds ||
+    userAgent !== settings.userAgent ||
+    privacyMode !== settings.privacyMode ||
+    searchMode !== settings.searchMode;
+
+  React.useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
   const handleSave = () => {
     updateSettings({
       hibpApiKey,
@@ -62,6 +75,10 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
+
+  React.useEffect(() => {
+    registerSaveHandler?.(handleSave);
+  }, [registerSaveHandler, handleSave]);
 
   const handleReset = () => {
     resetSettings();
@@ -99,8 +116,8 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
 
       <div className="space-y-4 max-w-2xl">
         {activeSection === "api-keys" && (
-        <Card>
-          <CardContent className="p-5 space-y-4">
+          <div className="space-y-4">
+
             <div className="flex items-center gap-2">
               <Key className="h-5 w-5 text-muted-foreground" />
               <h2 className="text-sm font-semibold">API Keys</h2>
@@ -156,13 +173,12 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
                 the API they belong to — never to any other service.
               </span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
         )}
 
         {activeSection === "caching" && (
-        <Card>
-          <CardContent className="p-5 space-y-4">
+          <div className="space-y-4">
+
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-muted-foreground" />
               <h2 className="text-sm font-semibold">Caching</h2>
@@ -224,13 +240,12 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
                 />
               </button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
         )}
 
         {activeSection === "probing" && (
-        <Card>
-          <CardContent className="p-5 space-y-4">
+          <div className="space-y-4">
+
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-muted-foreground" />
               <h2 className="text-sm font-semibold">Probing</h2>
@@ -314,13 +329,12 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
                 ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
         )}
 
         {activeSection === "danger" && (
-        <Card className="border-red-500/30">
-          <CardContent className="p-5 space-y-4">
+          <div className="space-y-4">
+
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
               <h2 className="text-sm font-semibold text-red-700 dark:text-red-300">
@@ -366,14 +380,13 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
                 </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
         )}
 
         {/* ---- Appearance ---- */}
         {activeSection === "appearance" && (
-          <Card>
-            <CardContent className="p-5 space-y-4">
+          <div className="space-y-4">
+
               <div className="flex items-center gap-2">
                 <Palette className="h-5 w-5 text-muted-foreground" />
                 <h2 className="text-sm font-semibold">Appearance</h2>
@@ -408,14 +421,13 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
               <div className="rounded-md border border-border/40 p-3 text-[11px] text-muted-foreground">
                 More appearance options (font size, density, accent color) coming soon.
               </div>
-            </CardContent>
-          </Card>
+            </div>
         )}
 
         {/* ---- Notifications ---- */}
         {activeSection === "notifications" && (
-          <Card>
-            <CardContent className="p-5 space-y-4">
+          <div className="space-y-4">
+
               <div className="flex items-center gap-2">
                 <Bell className="h-5 w-5 text-muted-foreground" />
                 <h2 className="text-sm font-semibold">Notifications</h2>
@@ -437,14 +449,13 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
                 ))}
               </div>
               <p className="text-[11px] text-muted-foreground">Notification preferences are stored locally.</p>
-            </CardContent>
-          </Card>
+            </div>
         )}
 
         {/* ---- Account ---- */}
         {activeSection === "account" && (
-          <Card>
-            <CardContent className="p-5 space-y-4">
+          <div className="space-y-4">
+
               <div className="flex items-center gap-2">
                 <User className="h-5 w-5 text-muted-foreground" />
                 <h2 className="text-sm font-semibold">Account</h2>
@@ -476,14 +487,13 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
               <div className="rounded-md border border-blue-500/30 bg-blue-500/5 p-3 text-[11px] text-muted-foreground">
                 Account features (sync across devices, team collaboration, shared watchlists) require authentication. Sign in to enable.
               </div>
-            </CardContent>
-          </Card>
+            </div>
         )}
 
         {/* ---- Data Management ---- */}
         {activeSection === "data" && (
-          <Card>
-            <CardContent className="p-5 space-y-4">
+          <div className="space-y-4">
+
               <div className="flex items-center gap-2">
                 <Database className="h-5 w-5 text-muted-foreground" />
                 <h2 className="text-sm font-semibold">Data Management</h2>
@@ -524,14 +534,13 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
               <div className="rounded-md border border-border/40 p-3 text-[11px] text-muted-foreground">
                 All data is stored in your browser's localStorage. Nothing is sent to any server except the APIs you query.
               </div>
-            </CardContent>
-          </Card>
+            </div>
         )}
 
         {/* ---- About ---- */}
         {activeSection === "about" && (
-          <Card>
-            <CardContent className="p-5 space-y-4">
+          <div className="space-y-4">
+
               <div className="flex items-center gap-2">
                 <Info className="h-5 w-5 text-muted-foreground" />
                 <h2 className="text-sm font-semibold">About OSINT Toolkit</h2>
@@ -563,27 +572,11 @@ export function SettingsView({ onBack, activeSection }: SettingsViewProps) {
                 searching usernames, scanning domains, and checking data
                 breaches. All data is stored locally in your browser.
               </div>
-            </CardContent>
-          </Card>
+            </div>
         )}
       </div>
 
-      {/* Save bar — only on sections with editable options */}
-      {["api-keys", "caching", "probing", "privacy", "danger"].includes(activeSection) && (
-        <div className="sticky bottom-4 flex justify-end">
-          <Card className="shadow-lg">
-            <CardContent className="p-3 flex items-center gap-3">
-              <span className="text-xs text-muted-foreground hidden sm:block">
-                Changes are saved to your browser
-              </span>
-              <Button onClick={handleSave} size="sm">
-                <Check className="h-3.5 w-3.5 mr-1.5" />
-                Save Settings
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+
     </div>
   );
 }

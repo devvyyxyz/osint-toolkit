@@ -1,0 +1,13 @@
+[install]
+# Use a faster registry mirror
+registry = "https://registry.npmjs.org"
+
+# Cache packages to disk for faster installs
+cache = true
+
+# Concurrency for installs
+concurrency = 16
+
+[install.lockfile]
+# Save the lockfile for reproducible installs
+save = true

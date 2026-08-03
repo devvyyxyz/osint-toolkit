@@ -79,6 +79,8 @@ function HomeContent() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<DashboardSection>("tools");
   const [activeSettingsSection, setActiveSettingsSection] = useState("api-keys");
+  const [settingsDirty, setSettingsDirty] = useState(false);
+  const saveHandlerRef = useRef<(() => void) | null>(null);
   const [activeTool, setActiveTool] = useState("username-finder");
   const [starredTools, setStarredTools] = useState<Set<string>>(new Set());
   const [rawInput, setRawInput] = useState("");
@@ -546,6 +548,8 @@ function HomeContent() {
         <SettingsSidebar
           activeSection={activeSettingsSection}
           onSectionChange={setActiveSettingsSection}
+          onSave={() => saveHandlerRef.current?.()}
+          isDirty={settingsDirty}
         />
       )}
 
@@ -647,7 +651,7 @@ function HomeContent() {
             <AccountPage />
             </ErrorBoundary>
           ) : showSettings ? (
-            <SettingsView onBack={() => setShowSettings(false)} activeSection={activeSettingsSection} />
+            <SettingsView onBack={() => setShowSettings(false)} activeSection={activeSettingsSection} onDirtyChange={setSettingsDirty} registerSaveHandler={(fn) => { saveHandlerRef.current = fn; }} />
           ) : (
             <>
               {activeTool === "username-finder" && (

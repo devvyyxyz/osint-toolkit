@@ -3,7 +3,6 @@
 import * as React from "react";
 import { User, LogOut, Settings, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSettings } from "@/app/settings-context";
 
 export function AccountPage() {
@@ -22,14 +21,9 @@ export function AccountPage() {
         <p className="text-muted-foreground">Manage your account settings and preferences</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
             Profile Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        <div className="space-y-4">
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
               <User className="h-8 w-8 text-primary" />
@@ -42,17 +36,11 @@ export function AccountPage() {
           <Button variant="outline" className="w-full" asChild>
             <a href="/login">Sign In with Discord</a>
           </Button>
-        </CardContent>
-      </Card>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
             Privacy & Security
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
+        <div className="space-y-2">
           <div className="flex items-center justify-between py-2">
             <div>
               <p className="font-medium">Search History</p>
@@ -67,22 +55,15 @@ export function AccountPage() {
             </div>
             <Button variant="ghost" size="sm">View</Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
             Preferences
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        <div>
           <p className="text-sm text-muted-foreground">
             Configure your API keys and tool preferences in the Settings section.
           </p>
-        </CardContent>
-      </Card>
+        </div>
 
       <Button variant="destructive" className="w-full" onClick={handleLogout}>
         <LogOut className="h-4 w-4 mr-2" />

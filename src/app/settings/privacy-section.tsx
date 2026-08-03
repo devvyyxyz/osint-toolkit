@@ -1,7 +1,6 @@
 "use client";
 
 import { Eye, EyeOff, Shield } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
@@ -16,8 +15,7 @@ export function PrivacySection({
 }) {
   return (
     <div className="space-y-4">
-      <Card>
-        <CardContent className="p-4 space-y-3">
+        <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-muted-foreground" />
             <h3 className="text-sm font-semibold">Privacy Mode</h3>
@@ -40,8 +38,7 @@ export function PrivacySection({
             </button>
           </div>
           <Button onClick={onSave} size="sm">Save Privacy Settings</Button>
-        </CardContent>
-      </Card>
+        </div>
     </div>
   );
 }

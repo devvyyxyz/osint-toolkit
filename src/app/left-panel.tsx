@@ -67,7 +67,10 @@ export function LeftPanel({
                 key={section.id}
                 variant="ghost"
                 size="icon"
-                onClick={() => onSectionChange(section.id)}
+                onClick={() => {
+                  onSectionChange(section.id);
+                  onCloseSettings();
+                }}
                 className={`w-full h-10 relative ${
                   isActive
                     ? "bg-accent text-accent-foreground"

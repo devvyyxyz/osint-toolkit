@@ -99,14 +99,29 @@ function CollapsibleSection({
   defaultOpen = true,
   badge,
   children,
+  storageKey,
 }: {
   label: string;
   icon?: React.ReactNode;
   defaultOpen?: boolean;
   badge?: React.ReactNode;
   children: React.ReactNode;
+  storageKey?: string;
 }) {
-  const [open, setOpen] = React.useState(defaultOpen);
+  const [open, setOpen] = React.useState(() => {
+    if (storageKey && typeof window !== "undefined") {
+      const saved = localStorage.getItem(storageKey);
+      if (saved !== null) return saved === "true";
+    }
+    return defaultOpen;
+  });
+
+  React.useEffect(() => {
+    if (storageKey) {
+      localStorage.setItem(storageKey, String(open));
+    }
+  }, [open, storageKey]);
+
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="group/section">
       <CollapsibleTrigger asChild>
@@ -504,7 +519,8 @@ export function AppSidebar(props: AppSidebarProps) {
           <CollapsibleSection
             label={`Starred (${starredTools.size})`}
             icon={<Star className="h-3 w-3" />}
-            defaultOpen={true}
+            defaultOpen={false}
+            storageKey="osint-sidebar-starred"
           >
             {starredTools.size === 0 ? (
               <div className="px-2 py-3 text-center">
@@ -660,7 +676,8 @@ export function AppSidebar(props: AppSidebarProps) {
           <CollapsibleSection
             label="Details & Options"
             icon={<Filter className="h-3 w-3" />}
-            defaultOpen={true}
+            defaultOpen={false}
+            storageKey="osint-sidebar-details"
           >
             <div className="space-y-3">
               {/* Results count — shows total results for the active tool */}

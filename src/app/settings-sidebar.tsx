@@ -16,7 +16,6 @@ import {
   Database,
   Info,
   Globe,
-  Check,
 } from "lucide-react";
 
 interface SettingsSidebarProps {
